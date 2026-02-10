@@ -1,10 +1,12 @@
 import React, { useState } from 'react'
+import {useNavigate} from 'react-router-dom';
 
 function Login() {
   const initialform = {
     username: '',
     password: ''
   }
+  const navigate = useNavigate();
   const [form, setForm] = useState(initialform)
   // const [username, setUsername] = useState('')
   // const [name, setName] = useState('');
@@ -22,16 +24,20 @@ function Login() {
         body: JSON.stringify(form)
       })
       //error handling
+      const data=await response.json();
       if (!response.ok) {
         const errordata = await response.json();
         throw new Error(errordata.Message || `${response.status}`)
+      } else {
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        navigate('/')
       }
-      const added = await response.json();
-      setSubmitstatus({ type: 'sucess', message: `login sucessful` })
+      setSubmitstatus({ type: 'sucess', message: 'login sucessful' })
       setForm(initialform);
 
     } catch (e) {
-      setSubmitstatus({ type: 'error', message: `failed to register ${e.message}` })
+      setSubmitstatus({ type: 'error', message: `failed to login ${e.message}` })
     }
   }
   const handleChange = (e) => {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-
+import { useNavigate } from 'react-router-dom';
 function Register() {
   const initialform = {
     username: '',
@@ -10,6 +10,8 @@ function Register() {
   const [form, setForm] = useState(initialform)
   const [submitstatus, setSubmitstatus] = useState(null);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
   const onSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -22,14 +24,21 @@ function Register() {
       })
       //error handling
       const data = await response.json();
-      if (!response.ok) {
+      if (response.ok) {
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user',JSON.stringify(data.user))
+        navigate('/');
+      } else {
         throw new Error(data.message || response.status);
       }
+      setSubmitstatus({ type: 'success', message: `Registered` })
       setForm(initialform);
     } catch (e) {
       setSubmitstatus({ type: 'error', message: `failed to register ${e.message}` })
+      // setForm(initialform);
     } finally {
       setLoading(false);
+
     }
   }
   const handleChange = (e) => {

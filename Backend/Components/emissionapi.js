@@ -1,4 +1,5 @@
 const Emission = require('../Schemas/emissionModel');
+const EmissionData = require('../Schemas/emissiondataModel');
 
 exports.questionairecalc = async (req, res) => {
     try {
@@ -19,11 +20,12 @@ exports.questionairecalc = async (req, res) => {
 // console.log(allFactors);
 
         for (const category in data) {
+            if (typeof data[category] !== 'object') continue;
             breakdown[category] = {};
 
             for (const activity in data[category]) {
-                const quantity = Number(data[category][activity]);
-                if (!quantity || quantity <= 0) continue;
+                const quantity = parseFloat(data[category][activity]);
+                if (isNaN(quantity) || quantity <= 0) continue;
 
                 const key = `${category}_${activity}`;
                 const factor = factorMap[key];
@@ -40,8 +42,18 @@ exports.questionairecalc = async (req, res) => {
 
                 totalEmission += emission;
             }
+            console.log(breakdown);
         }
-
+        
+        const emissiondata = new EmissionData({
+            totalemission: totalEmission,
+            unit: "kgCO2",
+            userid:req.user.id,
+            value:breakdown
+        })
+        console.log(emissiondata);
+        
+        await emissiondata.save();
         return res.status(200).json({
             totalEmission: Number(totalEmission.toFixed(2)),
             breakdown

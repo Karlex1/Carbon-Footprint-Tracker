@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState,useRef } from "react";
 
 const Questionaire = () => {
     const [form, setForm] = useState({});
     const [totalemission, setTotalemission] = useState(0);
+    const [submitstatus, setSubmitstatus] = useState(null);
     const handleCheckbox = (category, activity, checked) => {
         setForm(prev => {
             const updated = { ...prev };
@@ -29,23 +30,36 @@ const Questionaire = () => {
             };
         });
     };
-
+    const formRef = useRef(null);
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Payload:", form);
+        try {
+            // console.log("Payload:", form);
+            const token = localStorage.getItem('token')
+            const response = await fetch("http://localhost:5000/questionaire", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(form)
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setTotalemission(data.totalEmission);
+                setSubmitstatus({type:'success',message:'Calculation Completed'})
+            }
+        } catch (e) {
+            setSubmitstatus({type:'error',message:`${e.message}`})
+        }
+        finally {
+            formRef.current.reset();
+        }
 
-        const response=await fetch("http://localhost:5000/questionaire", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(form)
-        });
-       const data= await response.json();
-        setTotalemission(data.totalEmission);
-        setForm({})
     };
 
     return (
-        <form onSubmit={handleSubmit}>
+        <form ref={formRef} onSubmit={handleSubmit}>
             <h2>Carbon Footprint Questionnaire</h2>
 
             {/* FOOD */}
@@ -190,21 +204,19 @@ const Questionaire = () => {
             {/* HOUSING */}
             <fieldset>
                 <legend>Housing & Construction</legend>
-                {[["No Construction","kg"],[ "Minor Repair","kg"],[ "Moderate Renovation","kg"], ["Major Renovation","kg"], ["New Construction (Low)","m2"], ["New Construction (Medium)","m2"], ["New Construction (Heavy)","m2"]].map(([construction,unit])=> (
+                {[["No Construction", "kg"], ["Minor Repair", "kg"], ["Moderate Renovation", "kg"], ["Major Renovation", "kg"], ["New Construction (Low)", "m2"], ["New Construction (Medium)", "m2"], ["New Construction (Heavy)", "m2"]].map(([construction, unit]) => (
                     <div key={construction}>
                         <input type="radio" onChange={e => handleCheckbox("Housing", construction, e.target.checked)} />
                         {construction}
                         {unit === "m2" ? (<input type="number"
                             placeholder={unit}
-                            onChange={e => handleQuantity("Housing", construction, e.target.value)} />):(<></>)}
+                            onChange={e => handleQuantity("Housing", construction, e.target.value)} />) : (<></>)}
                     </div>))}
             </fieldset>
 
             <button type="submit">Calculate Emissions</button>
-
-            <pre>{JSON.stringify(form, null, 2)}</pre>
-
-            <p>{ totalemission}</p>
+            {submitstatus?<p>{submitstatus.message}</p>:''}
+            <p>{totalemission ? totalemission : ''}</p>
         </form>
     );
 };
