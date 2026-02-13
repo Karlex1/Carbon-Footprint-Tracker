@@ -47,9 +47,19 @@ const Questionaire = () => {
                 body: JSON.stringify(form)
             });
             const data = await response.json();
-            if (response.ok) {
+            const response2 = await fetch("http://localhost:5000/suggestionengine", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(form)
+            });
+            if (response.ok && response2.ok) {
                 setTotalemission(data.totalEmission);
                 setSubmitstatus({ type: 'success', message: 'Calculation Completed' })
+                const suggestionData = await response2.json();
+                localStorage.setItem('suggestion',JSON.stringify(suggestionData))
                 setTimeout(()=>{navigate('/dashboard')},300);
             }
         } catch (e) {
