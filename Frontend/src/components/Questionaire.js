@@ -1,6 +1,8 @@
 import React, { useState,useRef } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Questionaire = () => {
+    const navigate = useNavigate();
     const [form, setForm] = useState({});
     const [totalemission, setTotalemission] = useState(0);
     const [submitstatus, setSubmitstatus] = useState(null);
@@ -47,13 +49,15 @@ const Questionaire = () => {
             const data = await response.json();
             if (response.ok) {
                 setTotalemission(data.totalEmission);
-                setSubmitstatus({type:'success',message:'Calculation Completed'})
+                setSubmitstatus({ type: 'success', message: 'Calculation Completed' })
+                setTimeout(()=>{navigate('/dashboard')},300);
             }
         } catch (e) {
             setSubmitstatus({type:'error',message:`${e.message}`})
         }
         finally {
             formRef.current.reset();
+            setForm({});
         }
 
     };
@@ -206,7 +210,7 @@ const Questionaire = () => {
                 <legend>Housing & Construction</legend>
                 {[["No Construction", "kg"], ["Minor Repair", "kg"], ["Moderate Renovation", "kg"], ["Major Renovation", "kg"], ["New Construction (Low)", "m2"], ["New Construction (Medium)", "m2"], ["New Construction (Heavy)", "m2"]].map(([construction, unit]) => (
                     <div key={construction}>
-                        <input type="radio" onChange={e => handleCheckbox("Housing", construction, e.target.checked)} />
+                        <input type="radio" onChange={e => handleCheckbox("Housing", construction, e.target.checked)} name="housing"/>
                         {construction}
                         {unit === "m2" ? (<input type="number"
                             placeholder={unit}

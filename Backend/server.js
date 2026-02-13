@@ -6,6 +6,7 @@ const db_conn = require('./dbconnection.js');
 const Userapis = require('./Components/userapi.js');
 const Emissionapis = require('./Components/emissionapi.js');
 const authmiddleware = require('./Components/authmiddleware.js')
+const getHistory=require('./Components/getHistory.js')
 
 app.use(cors());
 app.use(express.json());
@@ -18,6 +19,7 @@ app.get(('/'), (req, res) => {
 app.post(('/newuser'), Userapis.adduser)
 app.post(('/login'), Userapis.login)
 app.post(('/questionaire'), authmiddleware, Emissionapis.questionairecalc)
+app.post(('/gethistory'),authmiddleware,getHistory.gethistory)
 
 var port = process.env.PORT;
 app.listen(port, () => { console.log('server started') })

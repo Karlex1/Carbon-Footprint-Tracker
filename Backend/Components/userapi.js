@@ -38,7 +38,7 @@ exports.login = async (req, res) => {
             return res.status(401).json({ message: "password not matched" })
         }
         const token = jwt.sign({ id: currUser._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
-        res.status(200).json({ token, user: { id: currUser._id, name: currUser.username } })
+        res.status(200).json({ token, name: currUser.username  })
     }
     catch (e) {
         console.log(e.message);
