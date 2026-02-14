@@ -1,16 +1,27 @@
-import React, { useState,useRef } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+    Container, Paper, Typography, Box, Button, Stack, TextField,
+    Checkbox, FormControlLabel, Grid, Accordion, AccordionSummary,
+    AccordionDetails, Alert, Divider, Radio, RadioGroup
+} from '@mui/material';
+import {
+    ExpandMore, Restaurant, LocalFireDepartment, ElectricBolt,
+    DirectionsCar, ShoppingBag, Delete, Home
+} from '@mui/icons-material';
+import ForestRoundedIcon from '@mui/icons-material/ForestRounded';
 
 const Questionaire = () => {
     const navigate = useNavigate();
     const [form, setForm] = useState({});
-    const [totalemission, setTotalemission] = useState(0);
     const [submitstatus, setSubmitstatus] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const formRef = useRef(null);
+
     const handleCheckbox = (category, activity, checked) => {
         setForm(prev => {
             const updated = { ...prev };
             if (!updated[category]) updated[category] = {};
-
             if (checked) updated[category][activity] = 0;
             else {
                 delete updated[category][activity];
@@ -25,213 +36,218 @@ const Questionaire = () => {
             if (!prev[category] || !(activity in prev[category])) return prev;
             return {
                 ...prev,
-                [category]: {
-                    ...prev[category],
-                    [activity]: Number(value)
-                }
+                [category]: { ...prev[category], [activity]: Number(value) }
             };
         });
     };
-    const formRef = useRef(null);
+
+    const handleRadio = (category, activity) => {
+        setForm(prev => ({
+            ...prev,
+            [category]: { [activity]: 0 }
+        }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
         try {
-            // console.log("Payload:", form);
-            const token = localStorage.getItem('token')
+            const token = localStorage.getItem('token');
             const response = await fetch("http://localhost:5000/questionaire", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
                 body: JSON.stringify(form)
             });
-            const data = await response.json();
+            const calcData = await response.json();
+
             const response2 = await fetch("http://localhost:5000/suggestionengine", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
                 body: JSON.stringify(form)
             });
+
             if (response.ok && response2.ok) {
-                setTotalemission(data.totalEmission);
-                setSubmitstatus({ type: 'success', message: 'Calculation Completed' })
                 const suggestionData = await response2.json();
-                localStorage.setItem('suggestion',JSON.stringify(suggestionData))
-                setTimeout(()=>{navigate('/dashboard')},300);
+                localStorage.setItem('suggestion', JSON.stringify(suggestionData));
+                setSubmitstatus({ type: 'success', message: 'Analysis Complete! Opening Dashboard...' });
+                setTimeout(() => { navigate('/dashboard') }, 1200);
+            } else {
+                throw new Error("Calculation failed");
             }
         } catch (e) {
-            setSubmitstatus({type:'error',message:`${e.message}`})
+            setSubmitstatus({ type: 'error', message: e.message });
+        } finally {
+            setLoading(false);
         }
-        finally {
-            formRef.current.reset();
-            setForm({});
-        }
-
     };
 
     return (
-        <form ref={formRef} onSubmit={handleSubmit}>
-            <h2>Carbon Footprint Questionnaire</h2>
+        <Container maxWidth="md" sx={{ py: 6 }}>
+            <Paper elevation={4} sx={{ p: { xs: 2, md: 5 }, borderRadius: 4 }}>
+                <Box sx={{ textAlign: 'center', mb: 5 }}>
+                    <ForestRoundedIcon sx={{ fontSize: 60, color: '#2e7d32' }} />
+                    <Typography variant="h3" sx={{ fontWeight: '800', color: '#1b5e20' }}>Lifestyle Survey</Typography>
+                    <Typography variant="body1" color="textSecondary">Help us understand your environmental impact with a few simple questions.</Typography>
+                </Box>
 
-            {/* FOOD */}
-            <fieldset>
-                <legend>Food (kg/month)</legend>
-                {["Rice", "Wheat", "Pulses", "Eggs", "Mutton", "Chicken", "Milk", "Vegetables Average", "Fruits Average"].map(item => (
-                    <div key={item}>
-                        <input
-                            type="checkbox"
-                            onChange={e => handleCheckbox("Food", item, e.target.checked)}
-                        />
-                        {item}
-                        <input
-                            type="number"
-                            placeholder="kg"
-                            onChange={e => handleQuantity("Food", item, e.target.value)}
-                        />
-                    </div>
-                ))}
-            </fieldset>
+                <form ref={formRef} onSubmit={handleSubmit}>
+                    <Stack spacing={3}>
+                        {submitstatus && <Alert severity={submitstatus.type}>{submitstatus.message}</Alert>}
 
-            {/* COOKING */}
-            <fieldset>
-                <legend>Cooking Fuel</legend>
-                {[
-                    ["Kerosene Fuel", "litres"],
-                    ["Firewood", "kg"],
-                    ["LPG Cooking Gas", "kg"]
-                ].map(([fuel, unit]) => (
-                    <div key={fuel}>
-                        <input
-                            type="checkbox"
-                            onChange={e =>
-                                handleCheckbox("Cooking", fuel, e.target.checked)
-                            }
-                        />
-                        {fuel}
-                        <input
-                            type="number"
-                            placeholder={unit}
-                            onChange={e =>
-                                handleQuantity("Cooking", fuel, e.target.value)
-                            }
-                        />
-                    </div>
-                ))}
-            </fieldset>
+                        {/* FOOD CATEGORY */}
+                        <Accordion defaultExpanded>
+                            <AccordionSummary expandIcon={<ExpandMore />}>
+                                <Stack direction="row" spacing={2} alignItems="center">
+                                    <Restaurant color="success" />
+                                    <Typography variant="h6">Your Diet & Food Habits</Typography>
+                                </Stack>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                <Grid container spacing={3}>
+                                    {[
+                                        { id: "Rice", q: "Do you eat Rice?" },
+                                        { id: "Wheat", q: "Do you eat Wheat (Chapatis/Bread)?" },
+                                        { id: "Pulses", q: "Do you consume Pulses (Dal)?" },
+                                        { id: "Eggs", q: "Do you include Eggs in your diet?" },
+                                        { id: "Mutton", q: "Do you consume Mutton?" },
+                                        { id: "Chicken", q: "Do you consume Chicken?" },
+                                        { id: "Milk", q: "Do you use Milk?" },
+                                        { id: "Vegetables Average", q: "Do you eat fresh Vegetables?" },
+                                        { id: "Fruits Average", q: "Do you eat fresh Fruits?" }
+                                    ].map(item => (
+                                        <Grid item xs={12} sm={6} key={item.id}>
+                                            <Stack spacing={1}>
+                                                <FormControlLabel
+                                                    control={<Checkbox color="success" onChange={e => handleCheckbox("Food", item.id, e.target.checked)} />}
+                                                    label={item.q}
+                                                />
+                                                <TextField
+                                                    fullWidth size="small" type="number"
+                                                    label={item.id === "Milk" ? "How many litres per month?" : "How many kilograms per month?"}
+                                                    disabled={!form["Food"]?.[item.id] && form["Food"]?.[item.id] !== 0}
+                                                    onChange={e => handleQuantity("Food", item.id, e.target.value)}
+                                                />
+                                            </Stack>
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            </AccordionDetails>
+                        </Accordion>
 
-            {/* ELECTRICITY */}
-            <fieldset>
-                <legend>Electricity</legend>
-                <input
-                    type="number"
-                    placeholder="kWh/month"
-                    onChange={e =>
-                        setForm(prev => ({
-                            ...prev,
-                            Electricity: { "Electricity Consumption": Number(e.target.value) }
-                        }))
-                    }
-                />
-            </fieldset>
+                        {/* TRANSPORT */}
+                        <Accordion>
+                            <AccordionSummary expandIcon={<ExpandMore />}>
+                                <Stack direction="row" spacing={2} alignItems="center">
+                                    <DirectionsCar color="success" />
+                                    <Typography variant="h6">Travel & Transportation</Typography>
+                                </Stack>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                <Grid container spacing={3}>
+                                    {[
+                                        { id: "Petrol Fuel", q: "Do you drive a Petrol vehicle?", u: "Litres used per month?" },
+                                        { id: "Diesel Fuel", q: "Do you drive a Diesel vehicle?", u: "Litres used per month?" },
+                                        { id: "CNG Fuel", q: "Do you drive a CNG vehicle?", u: "Kilograms used per month?" },
+                                        { id: "Train Travel", q: "Do you travel by Train?", u: "Total Kilometres per month?" },
+                                        { id: "Domestic Flight", q: "Do you take Domestic Flights?", u: "Total Kilometres per year?" },
+                                        { id: "Metro Rail", q: "Do you commute via Metro?", u: "Total Kilometres per month?" },
+                                        { id: "Auto Rickshaw", q: "Do you use Auto Rickshaws?", u: "Total Kilometres per month?" }
+                                    ].map(mode => (
+                                        <Grid item xs={12} sm={6} key={mode.id}>
+                                            <FormControlLabel
+                                                control={<Checkbox color="success" onChange={e => handleCheckbox("Transport", mode.id, e.target.checked)} />}
+                                                label={mode.q}
+                                            />
+                                            <TextField
+                                                fullWidth size="small" type="number" label={mode.u}
+                                                disabled={!form["Transport"]?.[mode.id] && form["Transport"]?.[mode.id] !== 0}
+                                                onChange={e => handleQuantity("Transport", mode.id, e.target.value)}
+                                            />
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            </AccordionDetails>
+                        </Accordion>
 
-            {/* TRANSPORT */}
-            <fieldset>
-                <legend>Transport</legend>
-                {[
-                    ["Train Travel", "km"],
-                    ["Domestic Flight", "km"],
-                    ["Petrol Fuel", "litres"],
-                    ["Diesel Fuel", "litres"],
-                    ["CNG Fuel", "kg"],
-                    ["Auto Rickshaw", "km"],
-                    ["Metro Rail", "km"]
-                ].map(([mode, unit]) => (
-                    <div key={mode}>
-                        <input
-                            type="checkbox"
-                            onChange={e =>
-                                handleCheckbox("Transport", mode, e.target.checked)
-                            }
-                        />
-                        {mode}
-                        <input
-                            type="number"
-                            placeholder={unit}
-                            onChange={e =>
-                                handleQuantity("Transport", mode, e.target.value)
-                            }
-                        />
-                    </div>
-                ))}
-            </fieldset>
+                        {/* SHOPPING */}
+                        <Accordion>
+                            <AccordionSummary expandIcon={<ExpandMore />}>
+                                <Stack direction="row" spacing={2} alignItems="center">
+                                    <ShoppingBag color="success" />
+                                    <Typography variant="h6">Shopping & Lifestyle</Typography>
+                                </Stack>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                <Grid container spacing={3}>
+                                    {[
+                                        { id: "Clothing", q: "Did you buy new Clothes?", u: "Total spent (₹) this month?" },
+                                        { id: "Electronics", q: "Did you buy Electronics?", u: "Total spent (₹) this month?" },
+                                        { id: "Furniture", q: "Did you buy Furniture?", u: "Total spent (₹) this month?" },
+                                        { id: "Online Delivery", q: "Do you order items online?", u: "Number of deliveries per month?" }
+                                    ].map(item => (
+                                        <Grid item xs={12} sm={6} key={item.id}>
+                                            <FormControlLabel
+                                                control={<Checkbox color="success" onChange={e => handleCheckbox("Goods", item.id, e.target.checked)} />}
+                                                label={item.q}
+                                            />
+                                            <TextField
+                                                fullWidth size="small" type="number" label={item.u}
+                                                disabled={!form["Goods"]?.[item.id] && form["Goods"]?.[item.id] !== 0}
+                                                onChange={e => handleQuantity("Goods", item.id, e.target.value)}
+                                            />
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            </AccordionDetails>
+                        </Accordion>
 
-            {/* GOODS */}
-            <fieldset>
-                <legend>Goods & Purchases</legend>
-                {[
-                    ["Furniture", "₹ spent"],
-                    ["Online Delivery", "no. of deliveries"]
-                ].map(([item, unit]) => (
-                    <div key={item}>
-                        <input
-                            type="checkbox"
-                            onChange={e => handleCheckbox("Goods", item, e.target.checked)}
-                        />
-                        {item}
-                        <input
-                            type="number"
-                            placeholder={unit}
-                            onChange={e => handleQuantity("Goods", item, e.target.value)}
-                        />
-                    </div>
-                ))}
-            </fieldset>
+                        {/* ELECTRICITY */}
+                        <Paper variant="outlined" sx={{ p: 3, border: '2px solid #a5d6a7' }}>
+                            <Stack direction="row" spacing={2} alignItems="center" mb={2}>
+                                <ElectricBolt sx={{ color: '#2e7d32' }} />
+                                <Typography variant="h6">Home Energy</Typography>
+                            </Stack>
+                            <Typography variant="body2" sx={{ mb: 2 }}>Based on your last utility bill, how much electricity did your home consume?</Typography>
+                            <TextField
+                                fullWidth label="Total Units (kWh) consumed this month" type="number"
+                                onChange={e => setForm(prev => ({ ...prev, Electricity: { "Electricity Consumption": Number(e.target.value) } }))}
+                            />
+                        </Paper>
 
-            {/* WASTE */}
-            <fieldset>
-                <legend>Waste (kg/month)</legend>
-                {[
-                    "Mixed Waste Landfill",
-                    "Food Waste",
-                    "Recycled Waste"
-                ].map(waste => (
-                    <div key={waste}>
-                        <input
-                            type="checkbox"
-                            onChange={e => handleCheckbox("Waste", waste, e.target.checked)}
-                        />
-                        {waste}
-                        <input
-                            type="number"
-                            placeholder="kg"
-                            onChange={e =>
-                                handleQuantity("Waste", waste, e.target.value)
-                            }
-                        />
-                    </div>
-                ))}
-            </fieldset>
+                        {/* HOUSING */}
+                        <Paper variant="outlined" sx={{ p: 3 }}>
+                            <Stack direction="row" spacing={2} alignItems="center" mb={2}>
+                                <Home color="success" />
+                                <Typography variant="h6">Housing & Construction</Typography>
+                            </Stack>
+                            <Typography variant="body2" sx={{ mb: 2 }}>Have you performed any construction or renovation work this year?</Typography>
+                            <RadioGroup name="housing" onChange={e => handleRadio("Housing", e.target.value)}>
+                                <Grid container spacing={1}>
+                                    {[
+                                        { id: "No Construction", l: "No, no work done" },
+                                        { id: "Minor Repair", l: "Yes, minor repairs" },
+                                        { id: "Moderate Renovation", l: "Yes, moderate renovation" },
+                                        { id: "Major Renovation", l: "Yes, major renovation" },
+                                        { id: "New Construction (Heavy)", l: "Yes, heavy new construction" }
+                                    ].map(item => (
+                                        <Grid item xs={12} sm={6} key={item.id}>
+                                            <FormControlLabel value={item.id} control={<Radio color="success" />} label={item.l} />
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            </RadioGroup>
+                        </Paper>
 
-            {/* HOUSING */}
-            <fieldset>
-                <legend>Housing & Construction</legend>
-                {[["No Construction", "kg"], ["Minor Repair", "kg"], ["Moderate Renovation", "kg"], ["Major Renovation", "kg"], ["New Construction (Low)", "m2"], ["New Construction (Medium)", "m2"], ["New Construction (Heavy)", "m2"]].map(([construction, unit]) => (
-                    <div key={construction}>
-                        <input type="radio" onChange={e => handleCheckbox("Housing", construction, e.target.checked)} name="housing"/>
-                        {construction}
-                        {unit === "m2" ? (<input type="number"
-                            placeholder={unit}
-                            onChange={e => handleQuantity("Housing", construction, e.target.value)} />) : (<></>)}
-                    </div>))}
-            </fieldset>
-
-            <button type="submit">Calculate Emissions</button>
-            {submitstatus?<p>{submitstatus.message}</p>:''}
-            <p>{totalemission ? totalemission : ''}</p>
-        </form>
+                        <Button
+                            type="submit" fullWidth variant="contained" size="large" disabled={loading}
+                            sx={{ bgcolor: '#2e7d32', py: 2, fontWeight: 'bold', '&:hover': { bgcolor: '#1b5e20' } }}
+                        >
+                            {loading ? "Analyzing your lifestyle..." : "Calculate My Carbon Footprint"}
+                        </Button>
+                    </Stack>
+                </form>
+            </Paper>
+        </Container>
     );
 };
 
