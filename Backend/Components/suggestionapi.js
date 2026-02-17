@@ -1,8 +1,11 @@
 const SuggestionEngine = require('../Schemas/suggestionModel');
-
+const EmissionData = require('../Schemas/emissiondataModel');
 exports.suggestionengine = async (req, res) => {
     try {
-        const data = req.body;
+        const userid = await req.user.id;
+        const lastsurveydata = await EmissionData.findOne({ userid: userid }).sort({ createdAt: -1 });
+        if (!lastsurveydata) return res.status(200).json([]); 
+        const data = lastsurveydata.value;
         const allsuggestion = await SuggestionEngine.find({});
         const suggestionarray = [];
         const suggestionMap = {};
@@ -16,7 +19,7 @@ exports.suggestionengine = async (req, res) => {
             // breakdown[category] = {};
 
             for (const activity in data[category]) {
-                const quantity = parseFloat(data[category][activity]);
+                const quantity = parseFloat(data[category][activity].quantity);
                 if (isNaN(quantity) || quantity <= 0) continue;
                 const key = `${activity}`;
                 const triggerdata = suggestionMap[key];
@@ -31,6 +34,7 @@ exports.suggestionengine = async (req, res) => {
                 }
             }
         }
+        suggestionarray.sort((a, b) => b.potential_saving - a.potential_saving);
         return res.status(200).json(suggestionarray);
     } catch (e) {
         return res.status(500).json({ message: "Server Error at suggestionengine" });

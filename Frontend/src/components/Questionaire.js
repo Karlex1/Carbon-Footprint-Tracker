@@ -1,15 +1,16 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     Container, Paper, Typography, Box, Button, Stack, TextField,
     Checkbox, FormControlLabel, Grid, Accordion, AccordionSummary,
-    AccordionDetails, Alert, Divider, Radio, RadioGroup
+    AccordionDetails, Alert, Radio, RadioGroup
 } from '@mui/material';
 import {
-    ExpandMore, Restaurant, LocalFireDepartment, ElectricBolt,
-    DirectionsCar, ShoppingBag, Delete, Home
+    ExpandMore, Restaurant, ElectricBolt,
+    DirectionsCar, ShoppingBag, Home
 } from '@mui/icons-material';
 import ForestRoundedIcon from '@mui/icons-material/ForestRounded';
+import { AuthContext } from "./AuthContext";
 
 const Questionaire = () => {
     const navigate = useNavigate();
@@ -48,18 +49,19 @@ const Questionaire = () => {
         }));
     };
 
+    const { token } = useContext(AuthContext);
+    
+    
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
             const response = await fetch("http://localhost:5000/questionaire", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
                 body: JSON.stringify(form)
             });
             const calcData = await response.json();
-
             const response2 = await fetch("http://localhost:5000/suggestionengine", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
@@ -86,8 +88,8 @@ const Questionaire = () => {
             <Paper elevation={4} sx={{ p: { xs: 2, md: 5 }, borderRadius: 4 }}>
                 <Box sx={{ textAlign: 'center', mb: 5 }}>
                     <ForestRoundedIcon sx={{ fontSize: 60, color: '#2e7d32' }} />
-                    <Typography variant="h3" sx={{ fontWeight: '800', color: '#1b5e20' }}>Lifestyle Survey</Typography>
-                    <Typography variant="body1" color="textSecondary">Help us understand your environmental impact with a few simple questions.</Typography>
+                    <Typography variant="h3" sx={{ fontWeight: '800', color: '#1b5e20' }}>Carbon Footprint Application</Typography>
+                    <Typography variant="body1" color="textSecondary">Some Question to start your  Journey and help us understand your environmental impact.</Typography>
                 </Box>
 
                 <form ref={formRef} onSubmit={handleSubmit}>
