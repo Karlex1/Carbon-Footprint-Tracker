@@ -4,8 +4,6 @@ const EmissionData = require('../Schemas/emissiondataModel');
 exports.questionairecalc = async (req, res) => {
     try {
         const data = req.body;
-        // console.log(data);
-        
         let totalEmission = 0;
         let breakdown = {};
 
@@ -36,7 +34,7 @@ exports.questionairecalc = async (req, res) => {
                 breakdown[category][activity] = {
                     quantity,
                     unit: factor.unit,
-                    emission_factor: factor.emission_factor,
+                    emission_factor: factor.emission_factor.toFixed(2),
                     emission
                 };
 
