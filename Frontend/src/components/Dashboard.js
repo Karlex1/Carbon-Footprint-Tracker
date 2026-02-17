@@ -24,14 +24,14 @@ function Dashboard() {
       setLoading(true);
       try {
         const [histRes, sugRes] = await Promise.all([
-          fetch("http://localhost:5000/gethistory", {
+          fetch(`${process.env.REACT_APP_API_BASE_URL}/gethistory`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               "Authorization": `Bearer ${token}`
             }
           }),
-          fetch("http://localhost:5000/suggestionengine", {
+          fetch(`${process.env.REACT_APP_API_BASE_URL}/suggestionengine`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
