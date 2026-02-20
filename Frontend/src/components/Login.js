@@ -88,6 +88,7 @@ function Login() {
               name="username"
               variant="outlined"
               fullWidth
+              placeholder="john@cft.com"
               required
               value={form.username}
               onChange={handleChange}
@@ -106,6 +107,7 @@ function Login() {
               type="password"
               variant="outlined"
               fullWidth
+              placeholder="**********"
               required
               value={form.password}
               onChange={handleChange}

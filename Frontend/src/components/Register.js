@@ -89,6 +89,7 @@ function Register() {
               required
               onChange={handleChange}
               fullWidth
+              placeholder="john@cft.com"
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -105,6 +106,7 @@ function Register() {
               required
               onChange={handleChange}
               fullWidth
+              placeholder="Ramsankar Yadav"
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -118,6 +120,7 @@ function Register() {
               label="Mobile Number"
               name="mobileno"
               type="tel"
+              placeholder="2345678938"
               value={form.mobileno}
               required
               onChange={handleChange}
@@ -135,6 +138,7 @@ function Register() {
               label="Password"
               name="password"
               type="password"
+              placeholder="**********"
               value={form.password}
               required
               onChange={handleChange}

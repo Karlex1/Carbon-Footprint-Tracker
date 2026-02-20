@@ -89,7 +89,7 @@ const Questionaire = () => {
             <Paper elevation={4} sx={{ p: { xs: 2, md: 5 }, borderRadius: 4 }}>
                 <Box sx={{ textAlign: 'center', mb: 5 }}>
                     <ForestRoundedIcon sx={{ fontSize: 60, color: '#2e7d32' }} />
-                    <Typography variant="h3" sx={{ fontWeight: '800', color: '#1b5e20' }}>Carbon Footprint Application</Typography>
+                    <Typography variant="h1" sx={{ fontWeight: '400', fontSize:60, color: '#1b5e20' }}>Carbon Footprint Application</Typography>
                     <Typography variant="body1" color="textSecondary">Some Question to start your  Journey and help us understand your environmental impact.</Typography>
                 </Box>
 
@@ -126,6 +126,7 @@ const Questionaire = () => {
                                                 />
                                                 <TextField
                                                     fullWidth size="small" type="number"
+                                                    inputProps={{ step: "0.01" }}
                                                     label={item.id === "Milk" ? "How many litres per month?" : "How many kilograms per month?"}
                                                     disabled={!form["Food"]?.[item.id] && form["Food"]?.[item.id] !== 0}
                                                     onChange={e => handleQuantity("Food", item.id, e.target.value)}
@@ -162,7 +163,7 @@ const Questionaire = () => {
                                                 label={mode.q}
                                             />
                                             <TextField
-                                                fullWidth size="small" type="number" label={mode.u}
+                                                fullWidth size="small" type="number" inputProps={{ step: "0.01" }}  label={mode.u}
                                                 disabled={!form["Transport"]?.[mode.id] && form["Transport"]?.[mode.id] !== 0}
                                                 onChange={e => handleQuantity("Transport", mode.id, e.target.value)}
                                             />
@@ -194,7 +195,7 @@ const Questionaire = () => {
                                                 label={item.q}
                                             />
                                             <TextField
-                                                fullWidth size="small" type="number" label={item.u}
+                                                fullWidth size="small" type="number" inputProps={{ step: "0.01" }} label={item.u}
                                                 disabled={!form["Goods"]?.[item.id] && form["Goods"]?.[item.id] !== 0}
                                                 onChange={e => handleQuantity("Goods", item.id, e.target.value)}
                                             />
@@ -212,7 +213,7 @@ const Questionaire = () => {
                             </Stack>
                             <Typography variant="body2" sx={{ mb: 2 }}>Based on your last utility bill, how much electricity did your home consume?</Typography>
                             <TextField
-                                fullWidth label="Total Units (kWh) consumed this month" type="number"
+                                fullWidth label="Total Units (kWh) consumed this month" type="number" inputProps={{ step: "0.01" }}
                                 onChange={e => setForm(prev => ({ ...prev, Electricity: { "Electricity Consumption": Number(e.target.value) } }))}
                             />
                         </Paper>
