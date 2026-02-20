@@ -54,8 +54,6 @@ const Questionaire = () => {
 
     
     const handleSubmit = async (e) => {
-        
-
         e.preventDefault();
         setLoading(true);
         try {
@@ -64,8 +62,8 @@ const Questionaire = () => {
                 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
                 body: JSON.stringify(form)
             });
-            await response.json();
-            const response2 = await fetch("http://localhost:5000/suggestionengine", {
+            // await response.json();
+            const response2 = await fetch(`${process.env.REACT_APP_API_BASE_URL}/suggestionengine`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
                 body: JSON.stringify(form)
