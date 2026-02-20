@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from './AuthContext';
 import {
-    AppBar, Toolbar, Typography, Button, Box, IconButton, Avatar, Tooltip
+    AppBar, Toolbar, Typography, Button, Box, Avatar, Tooltip
 } from '@mui/material';
 import {  ExitToApp, Dashboard as DashboardIcon, Assignment } from '@mui/icons-material';
 import ForestRoundedIcon from '@mui/icons-material/ForestRounded';

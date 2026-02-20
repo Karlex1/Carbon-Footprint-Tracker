@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "./AuthContext";
 import {
   Box, CircularProgress, Container, Divider, Grid,
-  Paper, Stack, Typography, Alert
+  Paper, Typography, Alert
 } from "@mui/material";
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend,
@@ -14,7 +14,7 @@ function Dashboard() {
   const [suggestion, setsuggestion] = useState([]);
   const [loading, setLoading] = useState(true);
   const [chartdata, setChartData] = useState([]);
-  const { token, user } = useContext(AuthContext);
+  const { token} = useContext(AuthContext);
 
   // Nature-themed palette
   const COLORS = ['#1b5e20', '#2e7d32', '#4caf50', '#8bc34a', '#c8e6c9'];

@@ -64,7 +64,7 @@ const Questionaire = () => {
                 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
                 body: JSON.stringify(form)
             });
-            const calcData = await response.json();
+            await response.json();
             const response2 = await fetch("http://localhost:5000/suggestionengine", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
