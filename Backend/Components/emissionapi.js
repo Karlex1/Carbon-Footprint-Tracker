@@ -6,7 +6,7 @@ exports.questionairecalc = async (req, res) => {
         const formData = req.body;
 
         // Call Flask Predictor
-        const response = await axios.post(`${process.env.MLP_URI}/predict`, formData,{timeout:6000});
+        const response = await axios.post(`${process.env.MLP_URI}/predict`, formData,{timeout:35000});
 
         // This key MUST match the Flask response
         const predictedTotal = response.data.total_carbon_emission;
