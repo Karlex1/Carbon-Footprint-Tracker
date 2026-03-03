@@ -2,9 +2,13 @@ const mongoose = require('mongoose')
 const schema = mongoose.Schema
 
 const emissiondata = new schema({
-    totalemission: {
+    yearly_totalemission: {
         required: true,
         type: Number,
+    },
+    monthly_totalemission: {
+        required: true,
+      type:Number,  
     },
     unit: {
         type: String,

@@ -19,9 +19,9 @@ const Header = () => {
     if (!user) return null;
 
     return (
-        <AppBar position="sticky" sx={{ bgcolor: '#2e7d32', mb: 4 }}>
+        <AppBar position="sticky" sx={{ bgcolor: '#2e7d32', mb:1 }}>
             <Toolbar>
-                {/* Logo and Branding */}
+                
                 <ForestRoundedIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} />
                 <Typography
                     variant="h6"
@@ -60,7 +60,6 @@ const Header = () => {
                     </Button>
                 </Box>
 
-                {/* User Actions */}
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Typography variant="body1" sx={{ display: { xs: 'none', sm: 'block' } }}>
                         Hi, <strong>{user}</strong>
