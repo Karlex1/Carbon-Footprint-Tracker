@@ -1,11 +1,12 @@
 const axios = require('axios');
+require('dotenv').config();
 const EmissionData = require('../Schemas/emissiondataModel');
 exports.questionairecalc = async (req, res) => {
     try {
         const formData = req.body;
 
         // Call Flask Predictor
-        const response = await axios.post('http://127.0.0.1:5001/predict', formData);
+        const response = await axios.post(`${process.env.MLP_URI}/predict`, formData,{timeout:6000});
 
         // This key MUST match the Flask response
         const predictedTotal = response.data.total_carbon_emission;
