@@ -10,7 +10,13 @@ const getHistory = require('./Components/getHistory.js');
 const suggestionengine = require('./Components/suggestionapi.js');
 
 app.use(cors(
-    
+    {
+  // Replace with your actual Vercel URL
+  origin: '*', 
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true // Required if you are using cookies/sessions
+}
 ));
 app.use(express.json());
 db_conn();
