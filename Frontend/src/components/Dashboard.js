@@ -1,8 +1,8 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "./AuthContext";
 import {
-  Box, CircularProgress, Container, Divider, Grid,
-  Paper, Typography, Alert, Card, CardContent, Chip
+  Box, CircularProgress, Container, Grid,
+  Paper, Typography, Alert
 } from "@mui/material";
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend,

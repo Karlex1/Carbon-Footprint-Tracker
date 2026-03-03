@@ -9,7 +9,9 @@ const authmiddleware = require('./Components/authmiddleware.js')
 const getHistory = require('./Components/getHistory.js');
 const suggestionengine = require('./Components/suggestionapi.js');
 
-app.use(cors());
+app.use(cors(
+    
+));
 app.use(express.json());
 db_conn();
 // app.use(express.json())

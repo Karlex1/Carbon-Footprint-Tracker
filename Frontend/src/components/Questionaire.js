@@ -6,7 +6,6 @@ import {
     InputAdornment, Stepper, Step, StepLabel, Fade, Divider
 } from "@mui/material";
 import {
-    Person, DirectionsCar, DeleteSweep, Devices,
     CheckCircle, ArrowForward, ArrowBack, Co2
 } from "@mui/icons-material";
 
