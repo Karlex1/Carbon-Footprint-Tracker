@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "./AuthContext";
 import {
-  Box, CircularProgress, Container, Divider, Grid,
+  Box, CircularProgress, Container, Grid,
   Paper, Typography, Alert
 } from "@mui/material";
 import {
@@ -11,59 +11,48 @@ import {
 
 function Dashboard() {
   const [data, setData] = useState([]);
-  const [suggestion, setsuggestion] = useState([]);
+  const [suggestion, setSuggestion] = useState([]);
   const [loading, setLoading] = useState(true);
   const [chartdata, setChartData] = useState([]);
-  const { token} = useContext(AuthContext);
+  const { token } = useContext(AuthContext);
 
-  // Nature-themed palette
-  const COLORS = ['#1b5e20', '#2e7d32', '#4caf50', '#8bc34a', '#c8e6c9'];
+  const COLORS = ['#1b5e20', '#2e7d32', '#4caf50', '#8bc34a', '#aed581'];
 
   useEffect(() => {
     const fetchAllData = async () => {
       setLoading(true);
       try {
+        const headers = {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        };
+
         const [histRes, sugRes] = await Promise.all([
-          fetch(`${process.env.REACT_APP_API_BASE_URL}/gethistory`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`
-            }
-          }),
-          fetch(`${process.env.REACT_APP_API_BASE_URL}/suggestionengine`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`
-            }
-          })
+          fetch(`${process.env.REACT_APP_API_BASE_URL}/gethistory`, { method: "POST", headers }),
+          fetch(`${process.env.REACT_APP_API_BASE_URL}/suggestionengine`, { method: "POST", headers })
         ]);
 
         const history = await histRes.json();
         const suggestions = await sugRes.json();
 
-        setData(Array.isArray(history) ? history : []);
-        setsuggestion(Array.isArray(suggestions) ? suggestions : []);
+        const historyArray = Array.isArray(history) ? history : [];
+        setData(historyArray);
+        setSuggestion(Array.isArray(suggestions) ? suggestions : []);
 
-        // Process breakdown for the Pie Chart from the latest record
-        if (history && history.length > 0 && history[0].value) {
-          const latest = history[0].value;
-          const formattedPie = [];
+        // Logic for the New Backend Structure
+        if (historyArray.length > 0 && historyArray[0].value) {
+          const v = historyArray[0].value;
 
-          Object.keys(latest).forEach(category => {
-            const activities = latest[category];
-            Object.keys(activities).forEach(activity => {
-              const item = activities[activity];
-              if (item.emission > 0) {
-                formattedPie.push({
-                  name: activity,
-                  value: parseFloat(item.emission.toFixed(2))
-                });
-              }
-            });
-          });
-          setChartData(formattedPie);
+          // Applying standard emission factors (estimates)
+          const breakdown = [
+            { name: 'Transport', value: (Number(v.vehicle_distance_km) * 0.17) + (v.air_travel_frequency === 'very frequently' ? 50 : 10) },
+            { name: 'Diet & Food', value: (Number(v.monthly_grocery_bill) * 0.05) + (v.diet_type === 'omnivore' ? 15 : 5) },
+            { name: 'Waste', value: (Number(v.waste_bag_count) * 2.5) },
+            { name: 'Digital', value: (Number(v.tv_pc_hours_daily) + Number(v.internet_hours_daily)) * 0.5 },
+            { name: 'Shopping', value: (Number(v.new_clothes_monthly) * 12) }
+          ].filter(item => item.value > 0);
+
+          setChartData(breakdown);
         }
       } catch (e) {
         console.error("Dashboard failed to load:", e.message);
@@ -77,64 +66,172 @@ function Dashboard() {
 
   if (loading) return (
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-      <CircularProgress color="success" />
+      <CircularProgress color="success" thickness={4} size={50} />
     </Box>
   );
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 , textAlign:'center'}}>
-      <Typography variant="h4" gutterBottom>Environmental Impact Report</Typography>
+    // <Box
+    //   sx={{
+    //     minHeight: "100vh",
+    //     backgroundColor: "#f4f8f4",
+    //     py: 6
+    //   }}
+    // >
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4, textAlign: 'center' }}>
 
-      <Grid container spacing={4}>
-        <Grid item size={{ xs:12,md: 6}}>
-          <Paper elevation={3} sx={{p:4,bgcolor:'#f1f8e9', border:'1px solid #c8e6c9',height:'550px',display:'flex',flexDirection:'column'}}>
-            <Typography varient="subtitle2" color="textSecondary">Latest Emission</Typography>
-            <Typography varient="h3" sx={{ color: "#1b5e0", my: 1 }}>{data && data.length > 0 ? data[0].totalemission.toFixed(3) : "0.00"}<Typography component="span" variant="h6" sx={{ ml: 1 }}>kgCO2</Typography>
-            </Typography>
-            <Divider sx={{ my: 3}} />
-            <Typography variant="h6" sx={{ mb: 2, color: '#2e7d32' }}>Activity Breakdown</Typography>
-            <Box sx={{ flexGrow: 1, width: '100%', minHeight: 0 }}>
-              <ResponsiveContainer width='100%' height='100%'>
-                <PieChart>
-                  <Pie data={chartdata} innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="value">{chartdata.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}</Pie>
-                  <Tooltip/><Legend verticalAlign="bottom"/>
-                </PieChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>
-        </Grid>
+        {/* HEADER */}
+        <Box sx={{ textAlign: "center", mb: 6 }}>
+          <Typography variant="h4" fontWeight="800" color="#1b5e20">
+            Environmental Impact Dashboard
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Monthly footprint overview and smart suggestions
+          </Typography>
+        </Box>
 
-        <Grid item size={{ xs: 12, md: 6 }}>
-          <Paper elevation={0} sx={{ p: 4, border: '1px solid #e0e0e0', height: '550px', display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="h6" sx={{ mb: 3, color: '#2e7d32' }}>Last 10 Records</Typography>
-              <Box sx={{flexGrow:1,width:'100%',minHeight:0}}>
-              <ResponsiveContainer width='100%' height='100%'>
-                <BarChart data={[...data].reverse().slice(-10)}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="createdAt" tickFormatter={(tick)=>new Date(tick).toLocaleDateString('en-In',{day:'numeric',month:'short'})} fontSize={12}/>
-                    <YAxis fontSize={12}/>
-                  <Tooltip labelFormatter={(label) => new Date(label).toLocaleString()} />
-                  <Bar dataKey="totalemission" fill="#4caf50" radius={[6,6,0,0]} />
-                </BarChart>
+        {/* 50-50 CHART SECTION */}
+        <Grid container spacing={4} sx={{ mb: 8 }}>
+
+          {/* PIE */}
+          <Grid item size={{ xs: 12, md: 6 }}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 4,
+                borderRadius: 4,
+                backgroundColor: "#e8f5e9",
+                boxShadow: "0 8px 20px rgba(0,0,0,0.05)",
+                height: 420,
+                display: "flex",
+                flexDirection: "column"
+              }}
+            >
+              <Typography variant="h6" fontWeight="700" sx={{ mb: 3 }}>
+                Emission Breakdown
+              </Typography>
+
+              <Box sx={{ flex: 1 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={chartdata}
+                      innerRadius={85}
+                      outerRadius={115}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {chartdata.map((_, i) => (
+                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend verticalAlign="bottom" />
+                  </PieChart>
                 </ResponsiveContainer>
               </Box>
-          </Paper>
+            </Paper>
+          </Grid>
+
+          {/* BAR */}
+          <Grid item size={{ xs: 12, md: 6 }}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 4,
+                borderRadius: 4,
+                backgroundColor: "#ffffff",
+                boxShadow: "0 8px 20px rgba(0,0,0,0.05)",
+                height: 420,
+                display: "flex",
+                flexDirection: "column"
+              }}
+            >
+              <Typography variant="h6" fontWeight="700" sx={{ mb: 3 }}>
+                Monthly Emission Trend
+              </Typography>
+
+              <Box sx={{ flex: 1 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={[...data].reverse().slice(-10)}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis
+                      dataKey="createdAt"
+                      tickFormatter={(tick) =>
+                        new Date(tick).toLocaleDateString("en-IN", {
+                          month: "short",
+                          day: "numeric"
+                        })
+                      }
+                    />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar
+                      dataKey="monthly_totalemission"
+                      fill="#2e7d32"
+                      radius={[6, 6, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            </Paper>
+          </Grid>
+
         </Grid>
 
-        <Grid item size={ {xs:12}} >
-          <Typography variant="h5" sx={{ color: '#1b5e20', fontWeight: 700, mb: 3, mt: 2 }}>Personalized Eco-Tips ✨</Typography>
+        {/* FULL WIDTH SUGGESTIONS */}
+        <Box>
+          <Typography
+            variant="h5"
+            fontWeight="800"
+            color="#1b5e20"
+            sx={{ mb: 4 }}
+          >
+            Personalized Eco Tips ✨
+          </Typography>
+
           {suggestion.length > 0 ? (
-            <Grid container spacing={3}> {suggestion.map((item, index) => (<Grid item size={{ xs: 12, sm: 6, md: 4, key: index }}>
-              <Paper elevation={0} sx={{p:3,borderLeft:'6px solid #4caf50',border:'1px solid #eee'}}>
-                <Typography variant="subtitle1" sx={{fontWeight:600}}>{item.tip}</Typography>
-                <Typography variant="body1" sx={{mt:1,color:'text.secondary'}}>By switching to <strong>{item.replacement}</strong>, you could save approx.
-                  <Typography component="span" sx={{ color: '#2e7d32', fontWeight: 700, ml: 1 }}>{item.potential_saving} kgCO2</Typography>.</Typography>
-              </Paper>
-            </Grid>))}</Grid>
-          ) : (<Alert severity='success' sx={{ borderRadius: 4 }}>No immediate suggestions- Your current footprints are well-optimized! 🌱</Alert>)}
-        </Grid>
-      </Grid>
-    </Container>
+            <Grid container spacing={3}>
+              {suggestion.map((item, index) => (
+                <Grid item xs={12} sm={6} md={4} key={index}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 3,
+                      borderRadius: 4,
+                      backgroundColor: "#ffffff",
+                      boxShadow: "0 6px 18px rgba(0,0,0,0.05)",
+                      transition: "0.3s",
+                      "&:hover": {
+                        transform: "translateY(-5px)",
+                        boxShadow: "0 12px 28px rgba(0,0,0,0.08)"
+                      }
+                    }}
+                  >
+                    <Typography fontWeight="700" sx={{ mb: 1 }}>
+                      {item.tip}
+                    </Typography>
+
+                    <Typography variant="body2" sx={{ mb: 2 }}>
+                      Switch to <b>{item.replacement}</b>
+                    </Typography>
+
+                    <Typography fontWeight="800" color="#2e7d32">
+                      −{item.potential_saving} kg CO₂
+                    </Typography>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Alert severity="success">
+              You're already carbon efficient 🌱
+            </Alert>
+          )}
+        </Box>
+
+      </Container>
+    // </Box>
   );
 }
 

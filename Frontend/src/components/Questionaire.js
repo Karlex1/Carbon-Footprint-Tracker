@@ -1,257 +1,192 @@
-import React, { useState, useRef, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import {
-    Container, Paper, Typography, Box, Button, Stack, TextField,
-    Checkbox, FormControlLabel, Grid, Accordion, AccordionSummary,
-    AccordionDetails, Alert, Radio, RadioGroup
-} from '@mui/material';
+    Container, Paper, Typography, Grid, TextField, MenuItem,
+    Button, Checkbox, FormControlLabel, Box, CircularProgress,
+    InputAdornment, Stepper, Step, StepLabel, Fade, Divider
+} from "@mui/material";
 import {
-    ExpandMore, Restaurant, ElectricBolt,
-    DirectionsCar, ShoppingBag, Home
-} from '@mui/icons-material';
-import ForestRoundedIcon from '@mui/icons-material/ForestRounded';
-import { AuthContext } from "./AuthContext";
+    CheckCircle, ArrowForward, ArrowBack, Co2
+} from "@mui/icons-material";
+
+const steps = ['Profile', 'Travel', 'Lifestyle', 'Digital'];
 
 const Questionaire = () => {
-    const navigate = useNavigate();
-    const [form, setForm] = useState({});
-    const [submitstatus, setSubmitstatus] = useState(null);
+    const [activeStep, setActiveStep] = useState(0);
     const [loading, setLoading] = useState(false);
-    const formRef = useRef(null);
+    const [result, setResult] = useState(null);
+    const navigate = useNavigate();
 
-    const handleCheckbox = (category, activity, checked) => {
-        setForm(prev => {
-            const updated = { ...prev };
-            if (!updated[category]) updated[category] = {};
-            if (checked) updated[category][activity] = 0;
-            else {
-                delete updated[category][activity];
-                if (Object.keys(updated[category]).length === 0) delete updated[category];
-            }
-            return updated;
-        });
+    const [form, setForm] = useState({
+        body_type: 'normal', gender: 'male', diet_type: 'vegetarian',
+        transport_mode: 'public', vehicle_fuel_type: 'petrol',
+        air_travel_frequency: 'never', vehicle_distance_km: 50,
+        waste_bag_count: 2, waste_bag_size: 'medium', energy_efficiency_level: 'No',
+        monthly_grocery_bill: 2000, tv_pc_hours_daily: 4,
+        new_clothes_monthly: 1, internet_hours_daily: 3,
+        social_activity_level: 'sometimes',
+        recycling_items: [], cooking_methods: []
+    });
+
+    const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+    const handleCheckChange = (listName, item) => {
+        const current = form[listName];
+        const updated = current.includes(item) ? current.filter(i => i !== item) : [...current, item];
+        setForm({ ...form, [listName]: updated });
     };
 
-    const handleQuantity = (category, activity, value) => {
-        setForm(prev => {
-            if (!prev[category] || !(activity in prev[category])) return prev;
-            return {
-                ...prev,
-                [category]: { ...prev[category], [activity]: Number(value) }
-            };
-        });
-    };
+    const handleNext = () => setActiveStep((prev) => prev + 1);
+    const handleBack = () => setActiveStep((prev) => prev - 1);
 
-    const handleRadio = (category, activity) => {
-        setForm(prev => ({
-            ...prev,
-            [category]: { [activity]: 0 }
-        }));
-    };
-
-    const { token } = useContext(AuthContext);
-  
-
-    
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert("Session Expired please login first...")
+            navigate('/login')
+            return;
+        }
         setLoading(true);
-        try {
-            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/questionaire`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-                body: JSON.stringify(form)
-            });
-            // await response.json();
-            const response2 = await fetch(`${process.env.REACT_APP_API_BASE_URL}/suggestionengine`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-                body: JSON.stringify(form)
-            });
+        const payload = {
+    ...form,
+    // Explicitly converting strings to numbers for the ML model
+    vehicle_distance_km: Number(form.vehicle_distance_km),
+    waste_bag_count: Number(form.waste_bag_count),
+    monthly_grocery_bill: Number(form.monthly_grocery_bill),
+    tv_pc_hours_daily: Number(form.tv_pc_hours_daily),
+    internet_hours_daily: Number(form.internet_hours_daily),
+    new_clothes_monthly: Number(form.new_clothes_monthly),
+    
+    // Derived values
+    recycling_count: form.recycling_items.length,
+    cooking_count: form.cooking_methods.length || 1,
+};
 
-            if (response.ok && response2.ok) {
-                const suggestionData = await response2.json();
-                localStorage.setItem('suggestion', JSON.stringify(suggestionData));
-                setSubmitstatus({ type: 'success', message: 'Analysis Complete! Opening Dashboard...' });
-                setTimeout(() => { navigate('/dashboard') }, 1200);
-            } else {
-                throw new Error("Calculation failed");
+// Remove the arrays so they aren't in the JSON
+delete payload.recycling_items;
+delete payload.cooking_methods;
+        delete payload.recycling_items;
+        delete payload.cooking_methods;
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL }/questionaire`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setResult(data);
+                setTimeout(() => navigate('/dashboard'), 2500);
             }
-        } catch (e) {
-            setSubmitstatus({ type: 'error', message: e.message });
-        } finally {
-            setLoading(false);
+        } catch (err) { alert("Server Error"); }
+        finally { setLoading(false); }
+    };
+
+    const renderStepContent = (step) => {
+        switch (step) {
+            case 0: return (
+                <Grid container spacing={3} justifyContent={'center'}>
+                    <Grid item xs={12} sm={4}><TextField select fullWidth label="Body Type" name="body_type" value={form.body_type} onChange={handleChange}>{['underweight', 'normal', 'overweight', 'obese'].map(v => <MenuItem key={v} value={v}>{v.toUpperCase()}</MenuItem>)}</TextField></Grid>
+                    <Grid item xs={12} sm={4}><TextField select fullWidth label="Gender" name="gender" value={form.gender} onChange={handleChange}><MenuItem value="male">Male</MenuItem><MenuItem value="female">Female</MenuItem></TextField></Grid>
+                    <Grid item xs={12} sm={4}><TextField select fullWidth label="Diet" name="diet_type" value={form.diet_type} onChange={handleChange}>{['vegetarian', 'vegan', 'omnivore', 'pescatarian'].map(v => <MenuItem key={v} value={v}>{v.toUpperCase()}</MenuItem>)}</TextField></Grid>
+                </Grid>
+            );
+            case 1: return (
+                <Grid container spacing={3} justifyContent={'center'}>
+                    <Grid item xs={12} sm={6}>
+                        <TextField select fullWidth label="Mode" name="transport_mode" value={form.transport_mode} onChange={handleChange}>
+                            <MenuItem value="public">Public</MenuItem>
+                            <MenuItem value="private">Private</MenuItem><MenuItem value="walk/bicycle">Walk/Bicycle</MenuItem></TextField></Grid>
+                    <Grid item xs={12} sm={6}><TextField select fullWidth label="Fuel" name="vehicle_fuel_type" value={form.vehicle_fuel_type} onChange={handleChange}>{['petrol', 'diesel', 'electric', 'cng'].map(v => <MenuItem key={v} value={v}>{v.toUpperCase()}</MenuItem>)}</TextField></Grid>
+                    <Grid item xs={12} sm={6}><TextField sx={{width:'140px'}} type="number" label="Distance" name="vehicle_distance_km" value={form.vehicle_distance_km} onChange={handleChange} InputProps={{ endAdornment: <InputAdornment position="end">km/mo</InputAdornment> }} /></Grid>
+                    <Grid item xs={12} sm={6}><TextField select fullWidth label="Flights" name="air_travel_frequency" value={form.air_travel_frequency} onChange={handleChange}>{['never', 'rarely', 'frequently', 'very frequently'].map(v => <MenuItem key={v} value={v}>{v.toUpperCase()}</MenuItem>)}</TextField></Grid>
+                </Grid>
+            );
+            case 2: return (
+                <Grid container spacing={3} justifyContent={'center'}>
+                    <Grid item xs={12} sm={4}>
+                        <TextField fullWidth type="number" label="Weekly Bags" name="waste_bag_count" value={form.waste_bag_count} onChange={handleChange} />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                        <TextField select fullWidth label="Size" name="waste_bag_size" value={form.waste_bag_size} onChange={handleChange}>
+                            {['small', 'medium', 'large', 'extra large'].map(v => <MenuItem key={v} value={v}>{v.toUpperCase()}</MenuItem>)}
+                        </TextField>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                        <TextField select fullWidth label="Energy Efficient" name="energy_efficiency_level" value={form.energy_efficiency_level} onChange={handleChange}>
+                            <MenuItem value="Yes">Yes</MenuItem>
+                            <MenuItem value="No">No</MenuItem>
+                            <MenuItem value="Sometimes">Sometimes</MenuItem>
+                        </TextField>
+                    </Grid>
+                    <Grid item xs={12}>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>Recycling Habits</Typography>
+                        {['Paper', 'Plastic', 'Glass', 'Metal'].map(item => <FormControlLabel key={item} control={<Checkbox size="small" color="success" onChange={() => handleCheckChange('recycling_items', item)} />} label={item} checked={form.recycling_items.includes(item)} />)}
+                        
+                        </Grid>
+                    <Grid item xs={12}>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>Cooking Habits</Typography>
+                        {['Stove', 'Oven', 'Microwave', 'Grill'].map(item => <FormControlLabel key={item} control={<Checkbox size="small" color="success" onChange={() => handleCheckChange('cooking_methods', item)} />} label={item} checked={form.cooking_methods.includes(item)} />)}
+                        
+                        </Grid>
+                </Grid>
+            );
+            case 3: return (
+                <Grid container spacing={3} justifyContent={'center'}>
+                    <Grid item xs={12} sm={6}><TextField fullWidth label="Grocery Bill" name="monthly_grocery_bill" type="number" value={form.monthly_grocery_bill} onChange={handleChange} InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }} /></Grid>
+                    <Grid item xs={12} sm={6}><TextField select fullWidth label="Social Habits" name="social_activity_level" value={form.social_activity_level} onChange={handleChange}><MenuItem value="never">Never</MenuItem><MenuItem value="sometimes">Sometimes</MenuItem><MenuItem value="often">Often</MenuItem></TextField></Grid>
+                    <Grid item xs={12} sm={4}><TextField fullWidth label="Screen Time" name="tv_pc_hours_daily" type="number" value={form.tv_pc_hours_daily} onChange={handleChange} InputProps={{ endAdornment: <InputAdornment position="end">hrs</InputAdornment> }} /></Grid>
+                    <Grid item xs={12} sm={4}><TextField fullWidth label="Internet" name="internet_hours_daily" type="number" value={form.internet_hours_daily} onChange={handleChange} InputProps={{ endAdornment: <InputAdornment position="end">hrs</InputAdornment> }} /></Grid>
+                    <Grid item xs={12} sm={4}><TextField fullWidth label="New Clothes" name="new_clothes_monthly" type="number" value={form.new_clothes_monthly} onChange={handleChange} InputProps={{ endAdornment: <InputAdornment position="end">pcs</InputAdornment> }} /></Grid>
+                </Grid>
+            );
+            default: return null;
         }
     };
 
     return (
-        <Container maxWidth="md" sx={{ py: 6 }}>
-            <Paper elevation={4} sx={{ p: { xs: 2, md: 5 }, borderRadius: 4 }}>
-                <Box sx={{ textAlign: 'center', mb: 5 }}>
-                    <ForestRoundedIcon sx={{ fontSize: 60, color: '#2e7d32' }} />
-                    <Typography variant="h1" sx={{ fontWeight: '400', fontSize:60, color: '#1b5e20' }}>Carbon Footprint Application</Typography>
-                    <Typography variant="body1" color="textSecondary">Some Question to start your  Journey and help us understand your environmental impact.</Typography>
-                </Box>
+        <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', background: 'linear-gradient(135deg, #f6f0f0 50%, #c3cfe2 100%)', py: 2}}>
+            <Container maxWidth="md">
+                <Paper elevation={10} sx={{ p: 4, borderRadius: 8, backdropFilter: 'blur(10px)', bgcolor: 'rgba(255, 255, 255, 0.9)', textAlign: 'center' }}>
 
-                <form ref={formRef} onSubmit={handleSubmit}>
-                    <Stack spacing={3}>
-                        {submitstatus && <Alert severity={submitstatus.type}>{submitstatus.message}</Alert>}
+                    <Co2 color="success" sx={{ fontSize: 60, mb: 1 }} />
+                    <Typography variant="h4" fontWeight="900" color="success.dark">Footprint Calculator</Typography>
+                    <Typography variant="body2" color="textSecondary" sx={{ mb: 4 }}>Accurate Carbon Analysis for India</Typography>
 
-                        {/* FOOD CATEGORY */}
-                        <Accordion defaultExpanded>
-                            <AccordionSummary expandIcon={<ExpandMore />}>
-                                <Stack direction="row" spacing={2} alignItems="center">
-                                    <Restaurant color="success" />
-                                    <Typography variant="h6">Your Diet & Food Habits</Typography>
-                                </Stack>
-                            </AccordionSummary>
-                            <AccordionDetails>
-                                <Grid container spacing={3}>
-                                    {[
-                                        { id: "Rice", q: "Do you eat Rice?" },
-                                        { id: "Wheat", q: "Do you eat Wheat (Chapatis/Bread)?" },
-                                        { id: "Pulses", q: "Do you consume Pulses (Dal)?" },
-                                        { id: "Eggs", q: "Do you include Eggs in your diet?" },
-                                        { id: "Mutton", q: "Do you consume Mutton?" },
-                                        { id: "Chicken", q: "Do you consume Chicken?" },
-                                        { id: "Milk", q: "Do you use Milk?" },
-                                        { id: "Vegetables Average", q: "Do you eat fresh Vegetables?" },
-                                        { id: "Fruits Average", q: "Do you eat fresh Fruits?" }
-                                    ].map(item => (
-                                        <Grid item xs={12} sm={6} key={item.id}>
-                                            <Stack spacing={1}>
-                                                <FormControlLabel
-                                                    control={<Checkbox color="success" onChange={e => handleCheckbox("Food", item.id, e.target.checked)} />}
-                                                    label={item.q}
-                                                />
-                                                <TextField
-                                                    fullWidth size="small" type="number"
-                                                    inputProps={{ step: "0.01" }}
-                                                    label={item.id === "Milk" ? "How many litres per month?" : "How many kilograms per month?"}
-                                                    disabled={!form["Food"]?.[item.id] && form["Food"]?.[item.id] !== 0}
-                                                    onChange={e => handleQuantity("Food", item.id, e.target.value)}
-                                                />
-                                            </Stack>
-                                        </Grid>
-                                    ))}
-                                </Grid>
-                            </AccordionDetails>
-                        </Accordion>
+                    <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 5 }}>
+                        {steps.map((label) => <Step key={label}><StepLabel>{label}</StepLabel></Step>)}
+                    </Stepper>
 
-                        {/* TRANSPORT */}
-                        <Accordion>
-                            <AccordionSummary expandIcon={<ExpandMore />}>
-                                <Stack direction="row" spacing={2} alignItems="center">
-                                    <DirectionsCar color="success" />
-                                    <Typography variant="h6">Travel & Transportation</Typography>
-                                </Stack>
-                            </AccordionSummary>
-                            <AccordionDetails>
-                                <Grid container spacing={3}>
-                                    {[
-                                        { id: "Petrol Fuel", q: "Do you drive a Petrol vehicle?", u: "Litres used per month?" },
-                                        { id: "Diesel Fuel", q: "Do you drive a Diesel vehicle?", u: "Litres used per month?" },
-                                        { id: "CNG Fuel", q: "Do you drive a CNG vehicle?", u: "Kilograms used per month?" },
-                                        { id: "Train Travel", q: "Do you travel by Train?", u: "Total Kilometres per month?" },
-                                        { id: "Domestic Flight", q: "Do you take Domestic Flights?", u: "Total Kilometres per year?" },
-                                        { id: "Metro Rail", q: "Do you commute via Metro?", u: "Total Kilometres per month?" },
-                                        { id: "Auto Rickshaw", q: "Do you use Auto Rickshaws?", u: "Total Kilometres per month?" }
-                                    ].map(mode => (
-                                        <Grid item xs={12} sm={6} key={mode.id}>
-                                            <FormControlLabel
-                                                control={<Checkbox color="success" onChange={e => handleCheckbox("Transport", mode.id, e.target.checked)} />}
-                                                label={mode.q}
-                                            />
-                                            <TextField
-                                                fullWidth size="small" type="number" inputProps={{ step: "0.01" }}  label={mode.u}
-                                                disabled={!form["Transport"]?.[mode.id] && form["Transport"]?.[mode.id] !== 0}
-                                                onChange={e => handleQuantity("Transport", mode.id, e.target.value)}
-                                            />
-                                        </Grid>
-                                    ))}
-                                </Grid>
-                            </AccordionDetails>
-                        </Accordion>
-
-                        {/* SHOPPING */}
-                        <Accordion>
-                            <AccordionSummary expandIcon={<ExpandMore />}>
-                                <Stack direction="row" spacing={2} alignItems="center">
-                                    <ShoppingBag color="success" />
-                                    <Typography variant="h6">Shopping & Lifestyle</Typography>
-                                </Stack>
-                            </AccordionSummary>
-                            <AccordionDetails>
-                                <Grid container spacing={3}>
-                                    {[
-                                        { id: "Clothing", q: "Did you buy new Clothes?", u: "Total spent (₹) this month?" },
-                                        { id: "Electronics", q: "Did you buy Electronics?", u: "Total spent (₹) this month?" },
-                                        { id: "Furniture", q: "Did you buy Furniture?", u: "Total spent (₹) this month?" },
-                                        { id: "Online Delivery", q: "Do you order items online?", u: "Number of deliveries per month?" }
-                                    ].map(item => (
-                                        <Grid item xs={12} sm={6} key={item.id}>
-                                            <FormControlLabel
-                                                control={<Checkbox color="success" onChange={e => handleCheckbox("Goods", item.id, e.target.checked)} />}
-                                                label={item.q}
-                                            />
-                                            <TextField
-                                                fullWidth size="small" type="number" inputProps={{ step: "0.01" }} label={item.u}
-                                                disabled={!form["Goods"]?.[item.id] && form["Goods"]?.[item.id] !== 0}
-                                                onChange={e => handleQuantity("Goods", item.id, e.target.value)}
-                                            />
-                                        </Grid>
-                                    ))}
-                                </Grid>
-                            </AccordionDetails>
-                        </Accordion>
-
-                        {/* ELECTRICITY */}
-                        <Paper variant="outlined" sx={{ p: 3, border: '2px solid #a5d6a7' }}>
-                            <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-                                <ElectricBolt sx={{ color: '#2e7d32' }} />
-                                <Typography variant="h6">Home Energy</Typography>
-                            </Stack>
-                            <Typography variant="body2" sx={{ mb: 2 }}>Based on your last utility bill, how much electricity did your home consume?</Typography>
-                            <TextField
-                                fullWidth label="Total Units (kWh) consumed this month" type="number" inputProps={{ step: "0.01" }}
-                                onChange={e => setForm(prev => ({ ...prev, Electricity: { "Electricity Consumption": Number(e.target.value) } }))}
-                            />
-                        </Paper>
-
-                        {/* HOUSING */}
-                        <Paper variant="outlined" sx={{ p: 3 }}>
-                            <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-                                <Home color="success" />
-                                <Typography variant="h6">Housing & Construction</Typography>
-                            </Stack>
-                            <Typography variant="body2" sx={{ mb: 2 }}>Have you performed any construction or renovation work this year?</Typography>
-                            <RadioGroup name="housing" onChange={e => handleRadio("Housing", e.target.value)}>
-                                <Grid container spacing={1}>
-                                    {[
-                                        { id: "No Construction", l: "No, no work done" },
-                                        { id: "Minor Repair", l: "Yes, minor repairs" },
-                                        { id: "Moderate Renovation", l: "Yes, moderate renovation" },
-                                        { id: "Major Renovation", l: "Yes, major renovation" },
-                                        { id: "New Construction (Heavy)", l: "Yes, heavy new construction" }
-                                    ].map(item => (
-                                        <Grid item xs={12} sm={6} key={item.id}>
-                                            <FormControlLabel value={item.id} control={<Radio color="success" />} label={item.l} />
-                                        </Grid>
-                                    ))}
-                                </Grid>
-                            </RadioGroup>
-                        </Paper>
-
-                        <Button
-                            type="submit" fullWidth variant="contained" size="large" disabled={loading}
-                            sx={{ bgcolor: '#2e7d32', py: 2, fontWeight: 'bold', '&:hover': { bgcolor: '#1b5e20' } }}
-                        >
-                            {loading ? "Analyzing your lifestyle..." : "Calculate My Carbon Footprint"}
-                        </Button>
-                    </Stack>
-                </form>
-            </Paper>
-        </Container>
+                    {result ? (
+                        <Fade in={!!result}>
+                            <Box py={4}>
+                                <CheckCircle color="success" sx={{ fontSize: 80, mb: 2 }} />
+                                <Typography variant="h5" fontWeight="800" gutterBottom>Calculation Finished!</Typography>
+                                <Typography variant="body1">Yearly: <b>{result.yearly_totalemission} kg</b></Typography>
+                                <Typography variant="body2" color="textSecondary">Redirecting to Dashboard...</Typography>
+                            </Box>
+                        </Fade>
+                    ) : (
+                        <Box >
+                            {renderStepContent(activeStep)}
+                            <Divider sx={{ my: 4 }} />
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <Button disabled={activeStep === 0} onClick={handleBack} startIcon={<ArrowBack />}>Back</Button>
+                                {activeStep === steps.length - 1 ? (
+                                    <Button variant="contained" color="success" onClick={handleSubmit} disabled={loading} sx={{ px: 4, borderRadius: 4 }}>
+                                        {loading ? <CircularProgress size={24} color="inherit" /> : "Submit"}
+                                    </Button>
+                                ) : (
+                                    <Button variant="contained" color="success" onClick={handleNext} endIcon={<ArrowForward />} sx={{ px: 4, borderRadius: 4 }}>Next</Button>
+                                )}
+                            </Box>
+                        </Box>
+                    )}
+                </Paper>
+            </Container>
+        </Box>
     );
 };
 

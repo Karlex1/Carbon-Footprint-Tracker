@@ -4,13 +4,24 @@ import Questionaire from "./components/Questionaire";
 import Register from "./components/Register";
 import Dashboard from './components/Dashboard';
 import Header from './components/Header';
-import { AuthProvider,AuthContext } from './components/AuthContext';
+import { AuthProvider, AuthContext } from './components/AuthContext';
 import { useContext } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+// import { AuthContext } from './components/AuthContext';
+import { Box, CircularProgress } from '@mui/material';
 
 const Protectedrouter = ({ children }) => {
-  const {token }=useContext(AuthContext)
-  return token ? children : <Navigate to='/login' />
+  const { token, loading } = useContext(AuthContext);
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress color="success" />
+      </Box>
+    );
+  }
+
+  return token ? children : <Navigate to="/login" replace />;
 }
 
 const theme = createTheme({
@@ -19,7 +30,7 @@ const theme = createTheme({
     fontFamily: '"Poppins", "Inter", sans-serif',
     h4: {
       fontWeight: 700,
-      color: '#1b5e20', 
+      color: '#1b5e20',
     },
     h6: {
       fontWeight: 600,
@@ -51,28 +62,28 @@ const Appcontent = () => {
 
   const { token } = useContext(AuthContext);
   return (
-      <Router>
-        {token && <Header />}
-        <Routes>
-          <Route path='/register' element={<Register />} />
-          <Route path='/login' element={<Login />} />
-          <Route path='/' element={
-            <Protectedrouter>
-              <Questionaire />
-            </Protectedrouter>
-          } />
-          <Route path='/dashboard' element={<Protectedrouter>
-          <ThemeProvider theme={theme}> <Dashboard /></ThemeProvider> 
-          </Protectedrouter>} />
+    <Router>
+      {token && <Header />}
+      <Routes>
+        <Route path='/register' element={<Register />} />
+        <Route path='/login' element={<Login />} />
+        <Route path='/' element={
+          <Protectedrouter>
+            <Questionaire />
+          </Protectedrouter>
+        } />
+        <Route path='/dashboard' element={<Protectedrouter>
+          <ThemeProvider theme={theme}> <Dashboard /></ThemeProvider>
+        </Protectedrouter>} />
 
-        </Routes>
-      </Router>)
+      </Routes>
+    </Router>)
 }
 
 function App() {
   return (<AuthProvider>
-    <Appcontent/>
-    </AuthProvider>
+    <Appcontent />
+  </AuthProvider>
   );
 }
 

@@ -1,64 +1,43 @@
-const Emission = require('../Schemas/emissionModel');
+require('dotenv').config();
+const axios = require('axios');
 const EmissionData = require('../Schemas/emissiondataModel');
-
 exports.questionairecalc = async (req, res) => {
     try {
-        const data = req.body;
-        let totalEmission = 0;
-        let breakdown = {};
+        const formData = req.body;
 
-        // Fetch all emission factors once
-        const allFactors = await Emission.find({});
+        // Call Flask Predictor
+        const response = await axios.post(`${process.env.MLP_URI}/predict`, formData,{timeout:35000});
 
-        // Create lookup map
-        const factorMap = {};
-        allFactors.forEach(item => {
-            factorMap[`${item.category}_${item.activity}`] = item;
-        });
-// console.log(allFactors);
+        // This key MUST match the Flask response
+        const predictedTotal = response.data.total_carbon_emission;
 
-        for (const category in data) {
-            if (typeof data[category] !== 'object') continue;
-            breakdown[category] = {};
-
-            for (const activity in data[category]) {
-                const quantity = parseFloat(data[category][activity]);
-                if (isNaN(quantity) || quantity <= 0) continue;
-
-                const key = `${category}_${activity}`;
-                const factor = factorMap[key];
-                if (!factor) continue;
-
-                const emission = quantity * factor.emission_factor;
-
-                breakdown[category][activity] = {
-                    quantity,
-                    unit: factor.unit,
-                    emission_factor: factor.emission_factor.toFixed(2),
-                    emission
-                };
-
-                totalEmission += emission;
-            }
-            console.log(breakdown);
+        if (predictedTotal === undefined) {
+            throw new Error("Invalid response from prediction service");
         }
-        
+
         const emissiondata = new EmissionData({
-            totalemission: totalEmission,
-            unit: "kgCO2",
-            userid:req.user.id,
-            value:breakdown
-        })
-        console.log(emissiondata);
-        
-        await emissiondata.save();
-        return res.status(200).json({
-            totalEmission: Number(totalEmission.toFixed(2)),
-            breakdown
+            yearly_totalemission: Math.round(predictedTotal), // Round for cleaner DB storage
+            monthly_totalemission:Math.round(predictedTotal/12),
+            unit: 'kgCO2/year',
+            userid: req.user.id,
+            value: formData // Stores the raw answers for future reference
         });
 
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Server failure at calculation" });
+        await emissiondata.save();
+
+        return res.status(200).json({
+            yearly_totalemission: Math.round(predictedTotal),
+            monthly_totalemission: Math.round(predictedTotal / 12),
+            message: 'Calculation successful'
+        });
+
+    } catch (e) {
+        const flaskError = e.response ? e.response.data.error : e.message;
+        console.error("Prediction Error Details:", flaskError);
+
+        return res.status(500).json({
+            message: "Prediction service error",
+            error: flaskError
+        });
     }
-};
+}
