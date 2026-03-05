@@ -48,10 +48,23 @@ const Questionaire = () => {
         }
         setLoading(true);
         const payload = {
-            ...form,
-            recycling_count: form.recycling_items.length,
-            cooking_count: form.cooking_methods.length || 1,
-        };
+    ...form,
+    // Explicitly converting strings to numbers for the ML model
+    vehicle_distance_km: Number(form.vehicle_distance_km),
+    waste_bag_count: Number(form.waste_bag_count),
+    monthly_grocery_bill: Number(form.monthly_grocery_bill),
+    tv_pc_hours_daily: Number(form.tv_pc_hours_daily),
+    internet_hours_daily: Number(form.internet_hours_daily),
+    new_clothes_monthly: Number(form.new_clothes_monthly),
+    
+    // Derived values
+    recycling_count: form.recycling_items.length,
+    cooking_count: form.cooking_methods.length || 1,
+};
+
+// Remove the arrays so they aren't in the JSON
+delete payload.recycling_items;
+delete payload.cooking_methods;
         delete payload.recycling_items;
         delete payload.cooking_methods;
 
