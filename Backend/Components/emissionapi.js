@@ -1,6 +1,7 @@
 require('dotenv').config();
 const axios = require('axios');
 const EmissionData = require('../Schemas/emissiondataModel');
+const Commitment = require('../Schemas/commitmentModel');
 exports.questionairecalc = async (req, res) => {
     try {
         const formData = req.body;
@@ -41,3 +42,25 @@ exports.questionairecalc = async (req, res) => {
         });
     }
 }
+exports.addCommit = async (req, res) => {
+    const newValue = req.body.value;
+    const userid = req.user.id;
+    const activeCommitments = await Commitment.find({ userid, status: 'active' });
+    let achievements = [];
+
+    for (let goal of activeCommitments) {
+        if (newValue[goal.category] === goal.goalValue) {
+            achievements.push({
+                category: goal.category,
+                saving: goal.expectedSaving
+            });
+            // Mark as achieved
+            goal.status = 'achieved';
+            await goal.save();
+        }
+    }
+    res.status(200).json({
+        message: "Data saved",
+        achievements: achievements.length > 0 ? achievements : null
+    });
+};

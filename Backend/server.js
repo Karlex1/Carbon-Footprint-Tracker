@@ -8,6 +8,7 @@ const Emissionapis = require('./Components/emissionapi.js');
 const authmiddleware = require('./Components/authmiddleware.js')
 const getHistory = require('./Components/getHistory.js');
 const suggestionengine = require('./Components/suggestionapi.js');
+const commit = require('./Components/commitapi.js');
 
 app.use(cors(
     {
@@ -24,12 +25,14 @@ db_conn();
 app.get(('/'), (req, res) => {
     res.send("CFT: RAM RAM")
 })
-
 app.post(('/newuser'), Userapis.adduser)
 app.post(('/login'), Userapis.login)
 app.post(('/questionaire'), authmiddleware, Emissionapis.questionairecalc)
 app.post(('/gethistory'),authmiddleware,getHistory.gethistory)
 app.post(('/suggestionengine'),authmiddleware,suggestionengine.suggestionengine);
+app.post(('/commitment'), authmiddleware, commit.commitToTip)
+app.post(('/addcommit'), authmiddleware, Emissionapis.addCommit)
+
 
 var port = process.env.PORT;
 app.listen(port, () => { console.log('server started') })

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { useNavigate } from 'react-router-dom';
 import {
     Container, Paper, Typography, Grid, TextField, MenuItem,
@@ -8,15 +8,18 @@ import {
 import {
     CheckCircle, ArrowForward, ArrowBack, Co2
 } from "@mui/icons-material";
+import { AuthContext } from "./AuthContext";
+
+
 
 const steps = ['Profile', 'Travel', 'Lifestyle', 'Digital'];
 
 const Questionaire = () => {
+    const { isTokenValid } = useContext(AuthContext);
     const [activeStep, setActiveStep] = useState(0);
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
     const navigate = useNavigate();
-
     const [form, setForm] = useState({
         body_type: 'normal', gender: 'male', diet_type: 'vegetarian',
         transport_mode: 'public', vehicle_fuel_type: 'petrol',
@@ -41,36 +44,32 @@ const Questionaire = () => {
 
     const handleSubmit = async () => {
         const token = localStorage.getItem('token');
-        if (!token) {
+        if (!token || !isTokenValid(token)) {
             alert("Session Expired please login first...")
             navigate('/login')
             return;
         }
         setLoading(true);
         const payload = {
-    ...form,
-    // Explicitly converting strings to numbers for the ML model
-    vehicle_distance_km: Number(form.vehicle_distance_km),
-    waste_bag_count: Number(form.waste_bag_count),
-    monthly_grocery_bill: Number(form.monthly_grocery_bill),
-    tv_pc_hours_daily: Number(form.tv_pc_hours_daily),
-    internet_hours_daily: Number(form.internet_hours_daily),
-    new_clothes_monthly: Number(form.new_clothes_monthly),
-    
-    // Derived values
-    recycling_count: form.recycling_items.length,
-    cooking_count: form.cooking_methods.length || 1,
-};
+            ...form,
+            // Explicitly converting strings to numbers for the ML model
+            vehicle_distance_km: Number(form.vehicle_distance_km),
+            waste_bag_count: Number(form.waste_bag_count),
+            monthly_grocery_bill: Number(form.monthly_grocery_bill),
+            tv_pc_hours_daily: Number(form.tv_pc_hours_daily),
+            internet_hours_daily: Number(form.internet_hours_daily),
+            new_clothes_monthly: Number(form.new_clothes_monthly),
 
-// Remove the arrays so they aren't in the JSON
-delete payload.recycling_items;
-delete payload.cooking_methods;
+            // Derived values
+            recycling_count: form.recycling_items.length,
+            cooking_count: form.cooking_methods.length || 1,
+        };
+
         delete payload.recycling_items;
         delete payload.cooking_methods;
-
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL }/questionaire`, {
+            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/questionaire`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
                 body: JSON.stringify(payload)
@@ -78,7 +77,13 @@ delete payload.cooking_methods;
             const data = await res.json();
             if (res.ok) {
                 setResult(data);
-                setTimeout(() => navigate('/dashboard'), 2500);
+                const achRes = await fetch(`${process.env.REACT_APP_API_BASE_URL}/addcommit`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                    body: JSON.stringify({ value: payload })
+                });
+                const achData = await achRes.json();
+                setTimeout(() => { navigate('/dashboard', { state: { achievements: achData.achievements } }) }, 2500);
             }
         } catch (err) { alert("Server Error"); }
         finally { setLoading(false); }
@@ -100,7 +105,7 @@ delete payload.cooking_methods;
                             <MenuItem value="public">Public</MenuItem>
                             <MenuItem value="private">Private</MenuItem><MenuItem value="walk/bicycle">Walk/Bicycle</MenuItem></TextField></Grid>
                     <Grid item xs={12} sm={6}><TextField select fullWidth label="Fuel" name="vehicle_fuel_type" value={form.vehicle_fuel_type} onChange={handleChange}>{['petrol', 'diesel', 'electric', 'cng'].map(v => <MenuItem key={v} value={v}>{v.toUpperCase()}</MenuItem>)}</TextField></Grid>
-                    <Grid item xs={12} sm={6}><TextField sx={{width:'140px'}} type="number" label="Distance" name="vehicle_distance_km" value={form.vehicle_distance_km} onChange={handleChange} InputProps={{ endAdornment: <InputAdornment position="end">km/mo</InputAdornment> }} /></Grid>
+                    <Grid item xs={12} sm={6}><TextField sx={{ width: '140px' }} type="number" label="Distance" name="vehicle_distance_km" value={form.vehicle_distance_km} onChange={handleChange} InputProps={{ endAdornment: <InputAdornment position="end">km/mo</InputAdornment> }} /></Grid>
                     <Grid item xs={12} sm={6}><TextField select fullWidth label="Flights" name="air_travel_frequency" value={form.air_travel_frequency} onChange={handleChange}>{['never', 'rarely', 'frequently', 'very frequently'].map(v => <MenuItem key={v} value={v}>{v.toUpperCase()}</MenuItem>)}</TextField></Grid>
                 </Grid>
             );
@@ -124,13 +129,13 @@ delete payload.cooking_methods;
                     <Grid item xs={12}>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>Recycling Habits</Typography>
                         {['Paper', 'Plastic', 'Glass', 'Metal'].map(item => <FormControlLabel key={item} control={<Checkbox size="small" color="success" onChange={() => handleCheckChange('recycling_items', item)} />} label={item} checked={form.recycling_items.includes(item)} />)}
-                        
-                        </Grid>
+
+                    </Grid>
                     <Grid item xs={12}>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>Cooking Habits</Typography>
                         {['Stove', 'Oven', 'Microwave', 'Grill'].map(item => <FormControlLabel key={item} control={<Checkbox size="small" color="success" onChange={() => handleCheckChange('cooking_methods', item)} />} label={item} checked={form.cooking_methods.includes(item)} />)}
-                        
-                        </Grid>
+
+                    </Grid>
                 </Grid>
             );
             case 3: return (
@@ -147,7 +152,7 @@ delete payload.cooking_methods;
     };
 
     return (
-        <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', background: 'linear-gradient(135deg, #f6f0f0 50%, #c3cfe2 100%)', py: 2}}>
+        <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', background: 'linear-gradient(135deg, #f6f0f0 50%, #c3cfe2 100%)', py: 2 }}>
             <Container maxWidth="md">
                 <Paper elevation={10} sx={{ p: 4, borderRadius: 8, backdropFilter: 'blur(10px)', bgcolor: 'rgba(255, 255, 255, 0.9)', textAlign: 'center' }}>
 
