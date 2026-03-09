@@ -186,6 +186,7 @@ function Dashboard() {
           </Paper>
         </Grid>
 
+<<<<<<< HEAD
         <Grid item size={{ xs: 12, md: 6 }}>
           <Paper elevation={0} sx={{ p: 4, borderRadius: 4, backgroundColor: "#ffffff", boxShadow: "0 8px 20px rgba(0,0,0,0.05)", height: 420, display: "flex", flexDirection: "column" }}>
             <Typography variant="h6" fontWeight="700" sx={{ mb: 3 }}>Past Monthly Emission Trend</Typography>
@@ -206,6 +207,18 @@ function Dashboard() {
           </Paper>
         </Grid>
       </Grid>
+=======
+        {/* FULL WIDTH SUGGESTIONS */}
+        <Box>
+          <Typography
+            variant="h5"
+            fontWeight="800"
+            color="#1b5e20"
+            sx={{ mb: 4 }}
+          >
+            Personalized Eco Tips 
+          </Typography>
+>>>>>>> 21c79274676e9de72e08c6f71732e0367bedb445
 
       <Box>
         <Typography variant="h5" fontWeight="800" color="#1b5e20" sx={{ mb: 4 }}>Personalized Eco Tips ✨</Typography>
