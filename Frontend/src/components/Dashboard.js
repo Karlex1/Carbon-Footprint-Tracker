@@ -187,7 +187,7 @@ function Dashboard() {
             color="#1b5e20"
             sx={{ mb: 4 }}
           >
-            Personalized Eco Tips ✨
+            Personalized Eco Tips 
           </Typography>
 
           {suggestion.length > 0 ? (
