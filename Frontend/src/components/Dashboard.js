@@ -12,7 +12,7 @@ import {
   Bar, YAxis, XAxis, CartesianGrid, BarChart
 } from "recharts";
 
-
+// Custom Tooltip for Recharts
 const CustomTooltip = ({ active, payload, label, isBar }) => {
   if (active && payload && payload.length) {
     return (
@@ -49,20 +49,22 @@ function Dashboard() {
   const location = useLocation();
 
   const { token, isTokenValid, logout } = useContext(AuthContext);
+
+  // Check for achievements passed via navigation state
   useEffect(() => {
     if (location.state?.achievements) {
       setAchievements(location.state.achievements);
-  }
-},[location])
+    }
+  }, [location]);
+
+  // Auth Guard
   useEffect(() => {
     if (token && !isTokenValid(token)) {
       logout();
     }
   }, [token, isTokenValid, logout]);
+
   useEffect(() => {
-    if (token && !isTokenValid(token)) {
-      logout();
-    }
     const fetchAllData = async () => {
       setLoading(true);
       try {
@@ -79,9 +81,11 @@ function Dashboard() {
         const history = await histRes.json();
         const suggestions = await sugRes.json();
         const historyArray = Array.isArray(history) ? history : [];
+
         setData(historyArray);
         setsuggestion(Array.isArray(suggestions) ? suggestions : []);
 
+        // Calculation logic for Pie Chart breakdown
         if (historyArray.length > 0 && historyArray[0].value) {
           const v = historyArray[0].value;
 
@@ -118,12 +122,12 @@ function Dashboard() {
     };
 
     if (token) fetchAllData();
-  }, [token,isTokenValid,logout]);
+  }, [token, isTokenValid, logout]);
 
   const handleCommit = async (tip) => {
-    try { 
+    try {
       const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/commitment`, {
-        method: "POST",
+        method: "POST", // Fixed: singular 'method'
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer " + token
@@ -134,11 +138,12 @@ function Dashboard() {
           potential_saving: tip.potential_saving
         })
       });
-      if (res.ok) alert(`Goal set:I'll try ${tip.replacement}!`);
+      if (res.ok) alert(`Goal set: I'll try ${tip.replacement}!`);
     } catch (e) {
-      console.error("Goal doesn't get saved at server", e);
+      console.error("Goal saving error", e);
     }
-  }
+  };
+
   if (loading) return (
     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
       <CircularProgress color="success" thickness={4} size={50} />
@@ -148,13 +153,14 @@ function Dashboard() {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4, textAlign: 'center' }}>
 
+      {/* Achievement Alert */}
       <Collapse in={!!achievements}>
         {achievements && achievements.map((ach, i) => (
           <Alert key={i} severity="success" sx={{ mb: 4, borderRadius: 4, textAlign: 'left' }} onClose={() => setAchievements(null)}>
             <Typography variant="h6" fontWeight="bold">Great Job!</Typography>
             You successfully switched your <b>{ach.category.replace('_', ' ')}</b>. This contributed to a reduction of approximately <b>{ach.saving} kg CO₂</b>
-        </Alert>
-      ))}
+          </Alert>
+        ))}
       </Collapse>
 
       <Box sx={{ textAlign: "center", mb: 6 }}>
@@ -163,7 +169,8 @@ function Dashboard() {
       </Box>
 
       <Grid container spacing={4} sx={{ mb: 8 }}>
-        <Grid item size={{ xs: 12, md: 6 }}>
+        {/* Pie Chart: Breakdown */}
+        <Grid item xs={12} md={6}>
           <Paper elevation={0} sx={{ p: 4, borderRadius: 4, backgroundColor: "#e8f5e9", boxShadow: "0 8px 20px rgba(0,0,0,0.05)", height: 420, display: "flex", flexDirection: "column" }}>
             <Typography variant="h6" fontWeight="700" sx={{ mb: 3 }}>Latest Emission Result Breakdown</Typography>
             <Box sx={{ flex: 1 }}>
@@ -186,8 +193,8 @@ function Dashboard() {
           </Paper>
         </Grid>
 
-<<<<<<< HEAD
-        <Grid item size={{ xs: 12, md: 6 }}>
+        {/* Bar Chart: History */}
+        <Grid item xs={12} md={6}>
           <Paper elevation={0} sx={{ p: 4, borderRadius: 4, backgroundColor: "#ffffff", boxShadow: "0 8px 20px rgba(0,0,0,0.05)", height: 420, display: "flex", flexDirection: "column" }}>
             <Typography variant="h6" fontWeight="700" sx={{ mb: 3 }}>Past Monthly Emission Trend</Typography>
             <Box sx={{ flex: 1 }}>
@@ -207,19 +214,8 @@ function Dashboard() {
           </Paper>
         </Grid>
       </Grid>
-=======
-        {/* FULL WIDTH SUGGESTIONS */}
-        <Box>
-          <Typography
-            variant="h5"
-            fontWeight="800"
-            color="#1b5e20"
-            sx={{ mb: 4 }}
-          >
-            Personalized Eco Tips 
-          </Typography>
->>>>>>> 21c79274676e9de72e08c6f71732e0367bedb445
 
+      {/* Suggestion Engine Cards */}
       <Box>
         <Typography variant="h5" fontWeight="800" color="#1b5e20" sx={{ mb: 4 }}>Personalized Eco Tips ✨</Typography>
         {suggestion.length > 0 ? (
@@ -230,7 +226,7 @@ function Dashboard() {
                   <Typography fontWeight="700" sx={{ mb: 1 }}>{item.tip}</Typography>
                   <Typography variant="body2" sx={{ mb: 2 }}>Switch to <b>{item.replacement}</b></Typography>
                   <Typography fontWeight="800" color="#2e7d32">−{item.potential_saving} kg CO₂</Typography>
-                  <Button variant="outlined" color="success" size="small" onClick={()=>handleCommit(item)} sx={{mt:2,borderRadius:2}}>I'll try this</Button>
+                  <Button variant="outlined" color="success" size="small" onClick={() => handleCommit(item)} sx={{ mt: 2, borderRadius: 2 }}>I'll try this</Button>
                 </Paper>
               </Grid>
             ))}
