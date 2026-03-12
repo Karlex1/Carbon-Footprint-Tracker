@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Box, Button, Container, Paper, Stack, TextField,
@@ -8,6 +8,7 @@ import {
   Person, Badge, Phone, Lock
 } from '@mui/icons-material';
 import ForestRoundedIcon from '@mui/icons-material/ForestRounded';
+import { AuthContext } from './AuthContext';
 
 function Register() {
   const initialform = {
@@ -21,6 +22,7 @@ function Register() {
   const [submitstatus, setSubmitstatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -35,8 +37,7 @@ function Register() {
 
       const data = await response.json();
       if (response.ok) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        login(data.name, data.token);
         navigate('/');
       } else {
         throw new Error(data.message || 'Registration failed');

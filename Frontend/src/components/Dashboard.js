@@ -1,78 +1,132 @@
-import { useContext, useEffect, useState } from "react";
-import { useLocation } from 'react-router-dom';
+import React, { useContext, useEffect, useState } from "react";
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from "./AuthContext";
-import {
-  Box, CircularProgress, Container, Grid,
-  Paper, Typography, Alert, Divider,
-  Collapse,
-  Button
-} from "@mui/material";
+import { useLanguage } from './LangContext';
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend,
   Bar, YAxis, XAxis, CartesianGrid, BarChart
 } from "recharts";
+import IntroPopup from "./IntroPopup";
 
-// Custom Tooltip for Recharts
-const CustomTooltip = ({ active, payload, label, isBar }) => {
+const THEME = {
+  bg: '#f7f9f7',
+  forest: '#12882b',
+  danger: '#dc2626',
+  leaf: '#10b981',
+  mist: '#e2e8f0',
+  white: '#ffffff',
+  text: '#1a2e1a',
+  subtext: '#64748b',
+  chart: ['#1b5e20', '#2e7d32', '#4caf50', '#8bc34a', '#aed581']
+};
+
+const CustomTooltip = ({ active, payload, label, isBar, lang }) => {
   if (active && payload && payload.length) {
     return (
-      <Paper
-        elevation={3}
-        sx={{
-          p: 2,
-          border: "1px solid #c8e6c9",
-          backgroundColor: "rgba(255, 255, 255, 0.96)",
-        }}
-      >
-        <Typography variant="caption" fontWeight="700" color="text.secondary">
+      <div style={{
+        backgroundColor: '#fff',
+        padding: '10px 14px',
+        borderRadius: '10px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        fontSize: '0.85rem',
+        border: '1px solid #c8e6c9'
+      }}>
+        <p style={{ margin: 0, fontWeight: 700, color: THEME.text }}>
           {isBar
-            ? new Date(label).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })
+            ? new Date(label).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { month: 'short', day: 'numeric' })
             : payload[0].name}
-        </Typography>
-        <Divider sx={{ my: 1 }} />
-        <Typography variant="body2" fontWeight="800" color="#1b5e20">
-          {payload[0].value.toFixed(2)} <small>kg CO₂</small>
-        </Typography>
-      </Paper>
+        </p>
+        <p style={{ margin: '2px 0 0', color: THEME.subtext, fontSize: '0.75rem' }}>
+          {isBar ? (lang === 'hi' ? 'मासिक एमिशन' : 'Monthly Emission') : ''}
+        </p>
+        <p style={{ margin: '2px 0 0', color: THEME.forest, fontWeight: 800 }}>
+          {payload[0].value.toFixed(1)} kg CO₂
+        </p>
+      </div>
     );
   }
   return null;
 };
 
-function Dashboard() {
-  const [data, setData] = useState([]);
-  const [suggestion, setsuggestion] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [chartdata, setChartData] = useState([]);
-  const [achievements, setAchievements] = useState(null);
-  const COLORS = ['#1b5e20', '#2e7d32', '#4caf50', '#8bc34a', '#aed581'];
+const Dashboard = () => {
+  const { lang } = useLanguage();
+  const { token, isTokenValid, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
   const location = useLocation();
 
-  const { token, isTokenValid, logout } = useContext(AuthContext);
+  const [data, setData] = useState([]);
+  const [suggestion, setSuggestion] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState([]);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [showIntro, setShowIntro] = useState(false);
 
-  // Check for achievements passed via navigation state
   useEffect(() => {
-    if (location.state?.achievements) {
-      setAchievements(location.state.achievements);
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const t = {
+    en: {
+      title: "Nature Impact",
+      sub: "Monthly overview",
+      monthly: "Current Cycle",
+      offset: "Nature Balance",
+      breakdown: "Emission Breakdown",
+      history: "Emission History",
+      action: "Eco Tips ✨",
+      commit: "Try",
+      trees: (n) => `${n} trees needed.`,
+      higher: "higher",
+      lower: "lower",
+      loading: "Analyzing your impact..."
+    },
+    hi: {
+      title: "प्रकृति प्रभाव",
+      sub: "मासिक विवरण",
+      monthly: "वर्तमान चक्र",
+      offset: "प्रकृति संतुलन",
+      breakdown: "एमिशन विवरण",
+      history: "एमिशन इतिहास",
+      action: "इको टिप्स ✨",
+      commit: "कोशिश",
+      trees: (n) => `${n} पेड़ चाहिए।`,
+      higher: "अधिक",
+      lower: "कम",
+      loading: "प्रभाव का विश्लेषण..."
     }
-  }, [location]);
+  }[lang || 'en'];
 
-  // Auth Guard
-  useEffect(() => {
-    if (token && !isTokenValid(token)) {
-      logout();
+  const handleCommit = async (tip) => {
+    try {
+      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/commitment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({
+          category: tip.category,
+          replacement: tip.replacement,
+          potential_saving: tip.potential_saving
+        })
+      });
+      if (res.ok) {
+        alert(lang === 'hi' ? `लक्ष्य निर्धारित: ${tip.replacement}!` : `Goal Set: ${tip.replacement}!`);
+      }
+    } catch (e) {
+      console.error("Commit error:", e);
     }
-  }, [token, isTokenValid, logout]);
+  };
 
   useEffect(() => {
+    if (!token || !isTokenValid(token)) { logout(); navigate('/login'); return; }
+
     const fetchAllData = async () => {
       setLoading(true);
       try {
-        const headers = {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + token
-        };
-
+        const headers = { "Content-Type": "application/json", "Authorization": "Bearer " + token };
         const [histRes, sugRes] = await Promise.all([
           fetch(`${process.env.REACT_APP_API_BASE_URL}/gethistory`, { method: "POST", headers }),
           fetch(`${process.env.REACT_APP_API_BASE_URL}/suggestionengine`, { method: "POST", headers })
@@ -81,14 +135,18 @@ function Dashboard() {
         const history = await histRes.json();
         const suggestions = await sugRes.json();
         const historyArray = Array.isArray(history) ? history : [];
-
         setData(historyArray);
-        setsuggestion(Array.isArray(suggestions) ? suggestions : []);
+        setSuggestion(Array.isArray(suggestions) ? suggestions : []);
 
-        // Calculation logic for Pie Chart breakdown
+        // Logic to show IntroPopup if it's a first-time user (no history) and hasn't seen it this session
+        const hasSeenIntro = sessionStorage.getItem('introSeen');
+        if (historyArray.length === 0 && !hasSeenIntro) {
+          setShowIntro(true);
+        }
+
         if (historyArray.length > 0 && historyArray[0].value) {
           const v = historyArray[0].value;
-
+          // Weights for specific categories
           const fuelWeights = { diesel: 0.25, petrol: 0.22, cng: 0.15, electric: 0.05 };
           const flightWeights = { 'very frequently': 250, frequently: 150, rarely: 50, never: 0 };
           const modeWeights = { private: 1.5, public: 0.7, 'walk/bicycle': 0 };
@@ -110,133 +168,130 @@ function Dashboard() {
             { name: 'Waste', value: Math.max(0, wasteScore) },
             { name: 'Digital', value: Math.max(0, digitalScore) },
             { name: 'Lifestyle', value: Math.max(0, lifestyleScore) }
-          ].map(item => ({ ...item, value: parseFloat(item.value.toFixed(2)) }));
-
+          ].map(item => ({ ...item, value: parseFloat(item.value.toFixed(1)) }));
           setChartData(finalBreakdown);
         }
-      } catch (e) {
-        console.error("Dashboard calculation error:", e);
-      } finally {
-        setLoading(false);
-      }
+      } catch (e) { console.error(e); } finally { setLoading(false); }
     };
+    fetchAllData();
+  }, [token, isTokenValid, logout, navigate]);
 
-    if (token) fetchAllData();
-  }, [token, isTokenValid, logout]);
-
-  const handleCommit = async (tip) => {
-    try {
-      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/commitment`, {
-        method: "POST", // Fixed: singular 'method'
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + token
-        },
-        body: JSON.stringify({
-          category: tip.category,
-          replacement: tip.replacement,
-          potential_saving: tip.potential_saving
-        })
-      });
-      if (res.ok) alert(`Goal set: I'll try ${tip.replacement}!`);
-    } catch (e) {
-      console.error("Goal saving error", e);
-    }
+  const handleCloseIntro = () => {
+    setShowIntro(false);
+    sessionStorage.setItem('introSeen', 'true');
   };
 
   if (loading) return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-      <CircularProgress color="success" thickness={4} size={50} />
-    </Box>
+    <div style={{ ...pageWrapper, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: THEME.forest, fontWeight: 700 }}>
+      {t.loading}
+    </div>
   );
+
+  const currentEm = data.length > 0 ? (data[0].monthly_totalemission || 0) : 0;
+  const prevEm = data.length > 1 ? (data[1].monthly_totalemission || 0) : null;
+  let isHigher = prevEm !== null && currentEm > prevEm;
+  let diffPercent = prevEm ? Math.abs(((currentEm - prevEm) / prevEm) * 100).toFixed(0) : 0;
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4, textAlign: 'center' }}>
+    <div style={{ ...pageWrapper, padding: isMobile ? '15px 12px' : '40px 6%' }}>
 
-      {/* Achievement Alert */}
-      <Collapse in={!!achievements}>
-        {achievements && achievements.map((ach, i) => (
-          <Alert key={i} severity="success" sx={{ mb: 4, borderRadius: 4, textAlign: 'left' }} onClose={() => setAchievements(null)}>
-            <Typography variant="h6" fontWeight="bold">Great Job!</Typography>
-            You successfully switched your <b>{ach.category.replace('_', ' ')}</b>. This contributed to a reduction of approximately <b>{ach.saving} kg CO₂</b>
-          </Alert>
-        ))}
-      </Collapse>
+      <IntroPopup open={showIntro} onClose={handleCloseIntro} />
 
-      <Box sx={{ textAlign: "center", mb: 6 }}>
-        <Typography variant="h4" fontWeight="800" color="#1b5e20">Environmental Impact Dashboard</Typography>
-        <Typography variant="body2" color="text.secondary">Monthly footprint overview and smart suggestions</Typography>
-      </Box>
+      <header style={{ textAlign: 'center', marginBottom: isMobile ? '15px' : '30px' }}>
+        <h1 style={{ ...logoStyle, fontSize: isMobile ? '1.5rem' : '2.2rem' }}>{t.title}</h1>
+      </header>
 
-      <Grid container spacing={4} sx={{ mb: 8 }}>
-        {/* Pie Chart: Breakdown */}
-        <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={{ p: 4, borderRadius: 4, backgroundColor: "#e8f5e9", boxShadow: "0 8px 20px rgba(0,0,0,0.05)", height: 420, display: "flex", flexDirection: "column" }}>
-            <Typography variant="h6" fontWeight="700" sx={{ mb: 3 }}>Latest Emission Result Breakdown</Typography>
-            <Box sx={{ flex: 1 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartdata}
-                    innerRadius={85}
-                    outerRadius={115}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {chartdata.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip isBar={false} />} />
-                  <Legend verticalAlign="bottom" />
-                </PieChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>
-        </Grid>
+      <div style={{ ...grid, display: isMobile ? 'flex' : 'grid', flexDirection: 'column', gap: isMobile ? '12px' : '20px' }}>
 
-        {/* Bar Chart: History */}
-        <Grid item xs={12} md={6}>
-          <Paper elevation={0} sx={{ p: 4, borderRadius: 4, backgroundColor: "#ffffff", boxShadow: "0 8px 20px rgba(0,0,0,0.05)", height: 420, display: "flex", flexDirection: "column" }}>
-            <Typography variant="h6" fontWeight="700" sx={{ mb: 3 }}>Past Monthly Emission Trend</Typography>
-            <Box sx={{ flex: 1 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={[...data].reverse().slice(-10)}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis
-                    dataKey="createdAt"
-                    tickFormatter={(tick) => new Date(tick).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
-                  />
-                  <YAxis />
-                  <Tooltip content={<CustomTooltip isBar={true} />} cursor={{ fill: '#f1f8e9' }} />
-                  <Bar dataKey="monthly_totalemission" fill="#2e7d32" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
+        {/* Metric Cards Row */}
+        <div style={{ display: 'flex', gap: '12px', gridColumn: 'span 12' }}>
+          <div style={{ ...card, flex: 1, padding: isMobile ? '16px' : '24px' }}>
+            <label style={labelStyle}>{t.monthly}</label>
+            <div style={{ ...bigNumber, fontSize: isMobile ? '1.8rem' : '3rem' }}>{currentEm.toFixed(0)} <small style={{ fontSize: '0.8rem' }}>kg</small></div>
+            {prevEm && (
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: isHigher ? THEME.danger : THEME.leaf }}>
+                {isHigher ? '↑' : '↓'} {diffPercent}% {isHigher ? t.higher : t.lower}
+              </div>
+            )}
+          </div>
+          <div style={{ ...card, flex: 1.2, background: THEME.forest, color: 'white', border: 'none', padding: isMobile ? '16px' : '24px' }}>
+            <label style={{ ...labelStyle, color: 'rgba(255,255,255,0.7)' }}>{t.offset}</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '5px' }}>
+              <span style={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>🌳</span>
+              <div style={{ fontSize: isMobile ? '0.9rem' : '1.1rem', fontWeight: 600 }}>{t.trees((currentEm / 1.75).toFixed(1))}</div>
+            </div>
+          </div>
+        </div>
 
-      {/* Suggestion Engine Cards */}
-      <Box>
-        <Typography variant="h5" fontWeight="800" color="#1b5e20" sx={{ mb: 4 }}>Personalized Eco Tips ✨</Typography>
-        {suggestion.length > 0 ? (
-          <Grid container spacing={3}>
-            {suggestion.map((item, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
-                <Paper elevation={0} sx={{ p: 3, borderRadius: 4, backgroundColor: "#ffffff", boxShadow: "0 6px 18px rgba(0,0,0,0.05)", transition: "0.3s", "&:hover": { transform: "translateY(-5px)", boxShadow: "0 12px 28px rgba(0,0,0,0.08)" } }}>
-                  <Typography fontWeight="700" sx={{ mb: 1 }}>{item.tip}</Typography>
-                  <Typography variant="body2" sx={{ mb: 2 }}>Switch to <b>{item.replacement}</b></Typography>
-                  <Typography fontWeight="800" color="#2e7d32">−{item.potential_saving} kg CO₂</Typography>
-                  <Button variant="outlined" color="success" size="small" onClick={() => handleCommit(item)} sx={{ mt: 2, borderRadius: 2 }}>I'll try this</Button>
-                </Paper>
-              </Grid>
+        {/* Charts Section */}
+        <div style={{ ...card, gridColumn: 'span 6', height: isMobile ? '320px' : '480px', padding: isMobile ? '16px' : '24px' }}>
+          <h4 style={cardTitleStyle}>{t.breakdown}</h4>
+          <div style={{ height: isMobile ? '220px' : '350px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={chartData} innerRadius={isMobile ? 55 : 85} outerRadius={isMobile ? 75 : 115} dataKey="value" stroke="none" paddingAngle={2}>
+                  {chartData.map((_, i) => <Cell key={i} fill={THEME.chart[i % THEME.chart.length]} />)}
+                </Pie>
+                <Tooltip content={<CustomTooltip isBar={false} lang={lang} />} />
+                <Legend iconSize={8} wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div style={{ ...card, gridColumn: 'span 6', height: isMobile ? '280px' : '480px', padding: isMobile ? '16px' : '24px' }}>
+          <h4 style={cardTitleStyle}>{t.history}</h4>
+          <div style={{ height: isMobile ? '180px' : '350px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={[...data].reverse().slice(-5)}>
+                <CartesianGrid strokeDasharray="0" vertical={false} stroke={THEME.mist} />
+                <XAxis
+                  dataKey="createdAt"
+                  hide={isMobile}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => new Date(v).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { month: 'short', day: 'numeric' })}
+                />
+                <YAxis axisLine={false} tickLine={false} width={25} fontSize={10} />
+                <Tooltip cursor={{ fill: '#f1f8e9' }} content={<CustomTooltip isBar={true} lang={lang} />} />
+                <Bar dataKey="monthly_totalemission" fill={THEME.forest} radius={[4, 4, 0, 0]} barSize={isMobile ? 20 : 40} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Suggestion Cards */}
+        <div style={{ gridColumn: 'span 12' }}>
+          <h2 style={{ color: THEME.forest, fontSize: '1.2rem', marginBottom: '15px' }}>{t.action}</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px' }}>
+            {suggestion.slice(0, 3).map((item, i) => (
+              <div key={i} style={{ ...card, padding: '16px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                <div style={{ flex: 1 }}>
+                  <h5 style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.2 }}>{item.tip}</h5>
+                  <p style={{ margin: '4px 0', fontSize: '0.75rem', color: THEME.subtext }}>-{item.potential_saving}kg CO₂</p>
+                </div>
+                <button
+                  onClick={() => handleCommit(item)}
+                  style={{ ...commitBtn, marginTop: 0, padding: '8px 12px', fontSize: '0.8rem' }}
+                >
+                  {t.commit}
+                </button>
+              </div>
             ))}
-          </Grid>
-        ) : (
-          <Alert severity="success">You're already carbon efficient 🌱</Alert>
-        )}
-      </Box>
-    </Container>
+          </div>
+        </div>
+      </div>
+    </div>
   );
-}
+};
+
+const pageWrapper = { background: THEME.bg, minHeight: '100vh', fontFamily: 'system-ui, sans-serif' };
+const grid = { display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', maxWidth: '1400px', margin: '0 auto' };
+const logoStyle = { color: THEME.forest, margin: 0, fontWeight: 800 };
+const card = { background: THEME.white, borderRadius: '20px', border: `1px solid #eef2ee`, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' };
+const labelStyle = { textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 800, color: THEME.subtext, letterSpacing: '0.5px' };
+const bigNumber = { fontWeight: 900, color: THEME.forest };
+const cardTitleStyle = { textAlign: 'center', fontSize: '0.9rem', fontWeight: 700, color: THEME.text, marginBottom: '10px' };
+const commitBtn = { background: THEME.forest, color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', transition: 'opacity 0.2s', ':active': { opacity: 0.8 } };
 
 export default Dashboard;

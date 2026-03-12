@@ -1,7 +1,9 @@
 .App {
   text-align: center;
 }
-
+body {
+  font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', sans-serif;
+}
 .App-logo {
   height: 40vmin;
   pointer-events: none;
