@@ -22,6 +22,10 @@ NUM_COLS = [
             'tv_pc_hours_daily', 'new_clothes_monthly', 'internet_hours_daily',
             'recycling_count', 'cooking_count'
         ]
+@app.route('/health',methods=['GET','HEAD'])
+def health():
+    return {"status":'awake',"message":"MLP is ready"},200
+
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
