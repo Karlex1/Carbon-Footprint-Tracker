@@ -291,10 +291,12 @@ const Dashboard = () => {
 };
 
 // Styles (mostly preserved, updated suggestion card layout)
-const pageWrapper = { background: THEME.bg, minHeight: '100vh', fontFamily: 'system-ui, sans-serif' };
+const pageWrapper = { minHeight: '100vh', fontFamily: 'system-ui, sans-serif' };
 const gridContainer = { display: 'flex', flexDirection: 'column', maxWidth: '1200px', margin: '0 auto' };
 const logoStyle = { color: THEME.forest, fontWeight: 900, margin: 0 };
-const card = { background: 'white', borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #edf2ed' };
+const card = {
+  background: 'rgba(255, 255, 255, 0.85)',
+  backdropFilter: 'blur(10px)', borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', border: '1px solid #edf2ed' };
 const labelStyle = { textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 800, color: THEME.subtext, letterSpacing: '0.5px' };
 const bigNumber = { fontSize: '2.8rem', fontWeight: 900, color: THEME.text, margin: '5px 0' };
 const cardTitleStyle = { textAlign: 'center', marginBottom: '15px', fontWeight: 700, color: THEME.text };

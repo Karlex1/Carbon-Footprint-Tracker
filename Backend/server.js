@@ -26,6 +26,7 @@ app.get(('/'), (req, res) => {
     res.send("CFT: RAM RAM")
 })
 app.post(('/newuser'), Userapis.adduser)
+app.get(('/profile'),authmiddleware,Userapis.getUserProfile)
 app.post(('/login'), Userapis.login)
 app.post(('/questionaire'), authmiddleware, Emissionapis.questionairecalc)
 app.post(('/gethistory'),authmiddleware,getHistory.gethistory)

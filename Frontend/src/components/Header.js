@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { AuthContext } from './AuthContext';
 import {
@@ -10,7 +10,6 @@ import {
     Dashboard as DashboardIcon,
     Assignment,
     Translate as TranslateIcon,
-    Home as HomeIcon
 } from '@mui/icons-material';
 import ForestRoundedIcon from '@mui/icons-material/ForestRounded';
 import { useLanguage } from './LangContext';
@@ -28,7 +27,9 @@ const Header = () => {
         logout();
         navigate('/login');
     };
-
+    const handleProfile = () => {
+    navigate('/profile')
+}
     if (!user) return null;
 
     const isActive = (path) => location.pathname === path;
@@ -130,6 +131,7 @@ const Header = () => {
                                 border: '2px solid rgba(255,255,255,0.3)',
                                 display: { xs: 'none', sm: 'flex' } // Hide avatar on very small screens to save space
                             }}
+                            onClick={handleProfile}
                         >
                             {user.charAt(0).toUpperCase()}
                         </Avatar>

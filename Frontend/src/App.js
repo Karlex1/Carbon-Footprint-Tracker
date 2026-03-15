@@ -12,6 +12,7 @@ import './App.css';
 // Contexts
 import { AuthProvider, AuthContext } from './components/AuthContext';
 import { LanguageProvider } from './components/LangContext';
+import User from './components/User';
 
 /**
  * Custom Nature-Themed Global Styles
@@ -98,6 +99,13 @@ const AppContent = () => {
             <Route path='/dashboard' element={
               <ProtectedRouter>
                 <Dashboard />
+              </ProtectedRouter>
+            } />
+
+
+            <Route path='/profile' element={
+              <ProtectedRouter>
+                <User />
               </ProtectedRouter>
             } />
 
