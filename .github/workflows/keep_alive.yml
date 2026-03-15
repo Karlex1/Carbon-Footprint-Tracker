@@ -1,0 +1,14 @@
+name: MLP Keep Alive
+
+on:
+  schedule:
+    - cron: '*/14 * * * *'
+  workflow_dispatch: 
+
+jobs:
+  ping_render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Heartbeat to Render
+        run: |
+          curl -I -s ${{ secrets.MLP_URL }} | head -n 1
