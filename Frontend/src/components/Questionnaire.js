@@ -17,9 +17,12 @@ const translations = {
     en: {
         title: "Carbon Footprint Tracker",
         subtitle: "India-based accurate ML based website",
+        info:"🌱 Powered by AI-based prediction",
         steps: ['Profile', 'Travel', 'Lifestyle', 'Digital'],
         next: "Next", back: "Back", submit: "Calculate",
-        loading: "Analyzing Data...", finished: "Calculation Finished!", redirect: "Redirecting...",
+        loading: "Analyzing your lifestyle...", loading2: " Preparing your personalized impact report", finished: "Prediction Finished!", redirect: "Redirecting...",
+        endml:" Your result is based on pattern analysis of lifestyle data",
+        buttonnote:" 🌱 Takes less than 30 seconds — get your personalized carbon impact instantly",
         labels: {
             bodyType: "Body Type", gender: "Gender", diet: "Diet",
             mode: "Transport Mode", fuel: "Fuel Type", distance: "Monthly KM", flights: "Flights",
@@ -42,9 +45,12 @@ const translations = {
     hi: {
         title: "कार्बन फुटप्रिंट ट्रैकर",
         subtitle: "भारत आधारित सटीक ML आधारित वेबसाइट",
+        info:"🌱 AI-आधारित पूर्वानुमान द्वारा संचालित",
         steps: ['प्रोफाइल', 'यात्रा', 'जीवनशैली', 'डिजिटल'],
         next: "आगे", back: "पीछे", submit: "गणना करें",
-        loading: "डेटा का विश्लेषण...", finished: "गणना पूरी हुई!", redirect: "डैशबोर्ड पर जा रहे हैं...",
+        loading: "आपकी जीवनशैली का विश्लेषण...", loading2: "अपनी व्यक्तिगत प्रभाव रिपोर्ट तैयार करना", finished: "गणना पूरी हुई!", redirect: "डैशबोर्ड पर जा रहे हैं...",
+        endml:"आपका परिणाम जीवनशैली डेटा के पैटर्न विश्लेषण पर आधारित है।",
+        buttonnote:"🌱 30 सेकंड से भी कम समय लगता है — अपना पर्सनलाइज़्ड कार्बन प्रभाव तुरंत जानें।",
         labels: {
             bodyType: "शरीर का प्रकार", gender: "लिंग", diet: "आहार",
             mode: "यात्रा साधन", fuel: "ईंधन का प्रकार", distance: "मासिक किमी", flights: "उड़ानें",
@@ -205,13 +211,24 @@ const Questionnaire = () => {
 
                     <div className="q-render-area">
                         {loading ? (
-                            <Box textAlign="center"><CircularProgress color="success" size={50} /><Typography sx={{ mt: 2, fontWeight: 700 }}>{t.loading}</Typography></Box>
+                            <Box textAlign="center">
+                                <CircularProgress color="success" size={50} />
+                                <Typography sx={{ mt: 2, fontWeight: 700 }}>
+                                    {t.loading}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: '#777' }}>
+                                   {t.loading2}
+                                </Typography>
+                            </Box>
                         ) : result ? (
                             <Fade in timeout={500}>
                                 <Box textAlign="center">
                                     <CheckCircle color="success" sx={{ fontSize: 70, mb: 1 }} />
                                     <Typography variant="h6" fontWeight="800">{t.finished}</Typography>
-                                    <Typography variant="body2">{t.redirect}</Typography>
+                                        <Typography variant="body2">{t.redirect}</Typography>
+                                        <Typography variant="caption" sx={{ color: '#777' }}>
+                                          {t.endml}
+                                        </Typography>
                                 </Box>
                             </Fade>
                         ) : (
@@ -220,14 +237,62 @@ const Questionnaire = () => {
                             </Fade>
                         )}
                     </div>
-
                     {!result && !loading && (
-                        <Box display="flex" justifyContent="space-between" mt={4}>
-                            <Button disabled={activeStep === 0} onClick={() => setActiveStep(s => s - 1)} sx={{ color: '#666', fontWeight: 'bold' }} startIcon={<ArrowBack />}>{t.back}</Button>
-                            <Button variant="contained" color="success" sx={{ borderRadius: '12px', px: 4, fontWeight: '900', textTransform: 'none', boxShadow: '0 4px 10px rgba(46,125,50,0.3)' }} 
-                                onClick={activeStep === 3 ? handleSubmit : () => setActiveStep(s => s + 1)}>
-                                {activeStep === 3 ? t.submit : t.next}
-                            </Button>
+                        <Box sx={{ mt: 4 }}>
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    fontSize: '0.8rem',
+                                    color: '#555',
+                                    textAlign: 'center',
+                                    m: 2,
+                                    lineHeight: 1.5
+                                }}
+                            >
+                                {t.buttonnote}
+                                <span
+                                    title={t.info}
+                                    style={{ marginLeft: 6, cursor: 'help' }}
+                                >
+                                    ⓘ
+                                </span>
+                            </Typography>
+                            <Box display="flex" justifyContent="space-between" mt={2}>
+                                <Button
+                                    disabled={activeStep === 0}
+                                    onClick={() => setActiveStep(s => s - 1)}
+                                    sx={{
+                                        color: activeStep === 0 ? '#bbb' : '#666',
+                                        fontWeight: 'bold'
+                                    }}
+                                    startIcon={<ArrowBack />}
+                                >
+                                    {t.back}
+                                </Button>
+
+                                <Button
+                                    variant="contained"
+                                    color="success"
+                                    sx={{
+                                        borderRadius: '14px',
+                                        px: 2,
+                                        fontWeight: '600',
+                                        textTransform: 'none',
+                                        boxShadow: '0 6px 14px rgba(46,125,50,0.35)',
+                                        transition: '0.2s',
+                                        '&:hover': {
+                                            transform: 'translateY(-1px)'
+                                        }
+                                    }}
+                                    onClick={activeStep === 3 ? handleSubmit : () => setActiveStep(s => s + 1)}
+                                >
+                                    {activeStep === 3
+                                        ? "See My Carbon Impact 🌍"   
+                                        : `Continue →`  
+                                    }
+                                </Button>
+
+                            </Box>
                         </Box>
                     )}
                 </Paper>

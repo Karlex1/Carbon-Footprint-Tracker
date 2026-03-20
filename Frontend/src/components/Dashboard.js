@@ -7,6 +7,7 @@ import {
   Bar, YAxis, XAxis, CartesianGrid, BarChart
 } from "recharts";
 import IntroPopup from "./IntroPopup";
+import { Box, Grid, Skeleton } from "@mui/material";
 
 const THEME = {
   bg: '#f7f9f7',
@@ -39,13 +40,17 @@ const Dashboard = () => {
       title: "Nature Impact Dashboard",
       monthly: "Monthly Footprint",
       offset: "Nature Balance",
-      breakdown: "Emission Breakdown",
-      history: "Trend Analysis",
-      action: "Step-by-Step Coaching ✨",
+      hint:"Uses a trained Multi-Layer Perceptron (MLP) model with high prediction accuracy",
+      info:"🌱 Your results are personalized using AI trained on real-world lifestyle data",
+      breakdown: "What impacts your footprint",
+      bt: "Calculated using your lifestyle patterns",
+      history: "Your footprint trend",
+      hisML:"Based on your past predictions",
+      action: "Smart suggestions ✨",
       actionSub: "Based on your habits, try this one step lower:",
       commit: "I'm In!",
       trees: (n) => `${n} trees needed to offset.`,
-      loading: "Analyzing your impact...",
+      loading: "Analyzing your lifestyle patterns...",
       newAch: "New Achievement",
       higher: "higher",
       lower: "lower",
@@ -57,13 +62,17 @@ const Dashboard = () => {
       title: "प्रकृति प्रभाव डैशबोर्ड",
       monthly: "मासिक फुटप्रिंट",
       offset: "प्रकृति संतुलन",
-      breakdown: "उत्सर्जन विवरण",
-      history: "प्रवृत्ति विश्लेषण",
-      action: "कोचिंग और सुझाव ✨",
+      hint:"उच्च पूर्वानुमान सटीकता वाले एक प्रशिक्षित मल्टी-लेयर परसेप्ट्रॉन (MLP) मॉडल का उपयोग करता है।",
+      info:"🌱 आपके परिणाम AI का उपयोग करके पर्सनलाइज़ किए गए हैं, जिसे वास्तविक जीवनशैली डेटा पर प्रशिक्षित किया गया है।",
+      breakdown: "आपके फ़ुटप्रिंट पर क्या असर डालता है?",
+      bt:"आपकी जीवनशैली के पैटर्न के आधार पर गणना की गई",
+      history: "आपके फ़ुटप्रिंट का रुझान",
+      hisML:"आपकी पिछली भविष्यवाणियों के आधार पर",
+      action: "स्मार्ट सुझाव ✨",
       actionSub: "आपकी आदतों के आधार पर, यह छोटा कदम उठाएं:",
       commit: "स्वीकारें",
       trees: (n) => `ऑफसेट के लिए ${n} पेड़ चाहिए।`,
-      loading: "गणना की जा रही है...",
+      loading: "आपकी जीवनशैली के पैटर्न का विश्लेषण किया जा रहा है...",
       newAch: "नई उपलब्धि",
       higher: "अधिक",
       lower: "कम",
@@ -166,8 +175,48 @@ const Dashboard = () => {
       if (res.ok) alert(lang === 'hi' ? "लक्ष्य निर्धारित!" : "Goal Committed!");
     } catch (e) { console.error(e); }
   };
-
-  if (loading) return <div style={loaderStyle}>{t.loading}</div>;
+  const handleStartSurvey = () => { // ⭐ NEW
+    sessionStorage.setItem('introSeen', 'true');
+    navigate('/questionnaire'); 
+  };
+  const CustomTooltip = ({ active, payload, label, isBar, lang }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{
+          backgroundColor: '#fff',
+          padding: '10px 14px',
+          borderRadius: '10px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          fontSize: '0.85rem',
+          border: '1px solid #c8e6c9'
+        }}>
+          <p style={{ margin: 0, fontWeight: 700, color: THEME.text }}>
+            {isBar
+              ? new Date(label).toLocaleDateString(lang === 'hi' ? 'hi-IN' : 'en-IN', { month: 'short', day: 'numeric' })
+              : payload[0].name}
+          </p>
+          <p style={{ margin: '2px 0 0', color: THEME.subtext, fontSize: '0.75rem' }}>
+            {isBar ? (lang === 'hi' ? 'मासिक एमिशन' : 'Monthly Emission') : ''}
+          </p>
+          <p style={{ margin: '2px 0 0', color: THEME.forest, fontWeight: 800 }}>
+            {payload[0].value.toFixed(1)} kg CO₂
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+  if (loading) return (
+    <Box sx={{ padding: isMobile ? '15px 12px' : '40px 6%', minHeight: '100vh' }}>
+      <Skeleton variant="text" width="40%" height={60} sx={{ mx: 'auto', mb: 4, bgcolor: 'rgba(138, 237, 52, 0.2)' }} />
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}><Skeleton variant="rectangular" height={140} sx={{ borderRadius: '24px', bgcolor: 'rgba(222, 255, 184, 0.2)' }} /></Grid>
+        <Grid item xs={12} md={6}><Skeleton variant="rectangular" height={140} sx={{ borderRadius: '24px', bgcolor: 'rgba(188, 80, 80, 0.2)' }} /></Grid>
+        <Grid item xs={12} md={6}><Skeleton variant="rectangular" height={350} sx={{ borderRadius: '24px', bgcolor: 'rgba(255,255,255,0.2)' }} /></Grid>
+        <Grid item xs={12} md={6}><Skeleton variant="rectangular" height={350} sx={{ borderRadius: '24px', bgcolor: 'rgba(255,255,255,0.2)' }} /></Grid>
+      </Grid>
+    </Box>
+  );
 
   const currentEm = data.length > 0 ? (data[0].monthly_totalemission || 0) : 0;
   const prevEm = data.length > 1 ? (data[1].monthly_totalemission || 0) : null;
@@ -176,7 +225,7 @@ const Dashboard = () => {
 
   return (
     <div style={{ ...pageWrapper, padding: isMobile ? '15px 12px' : '40px 6%' }}>
-      <IntroPopup open={showIntro} onClose={() => { setShowIntro(false); sessionStorage.setItem('introSeen', 'true'); }} />
+      <IntroPopup open={showIntro} onClose={() => { setShowIntro(false); sessionStorage.setItem('introSeen', 'true'); }} onStart = { handleStartSurvey }  />
 
       {/* ACHIEVEMENT BANNER */}
       {achievements && (
@@ -216,10 +265,34 @@ const Dashboard = () => {
           </div>
         </div>
 
+        <div style={{
+          ...card,
+          padding: '16px',
+          marginTop: '10px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{ fontSize: '0.9rem', color: THEME.text }}>
+            {t.info}
+          </div>
+
+          {/* 👇 Recruiter Hint (Tooltip) */}
+          <span
+            title={t.hint}
+            style={{ cursor: 'help', fontSize: '0.9rem', color: THEME.subtext }}
+          >
+            ⓘ
+          </span>
+        </div>
         {/* CHARTS SECTION */}
         <div style={chartGrid(isMobile)}>
           <div style={{ ...card, padding: '24px' }}>
-            <h4 style={cardTitleStyle}>{t.breakdown}</h4>
+            <h4 style={cardTitleStyle}>
+              {t.breakdown}
+              <span title={t.bt} style={{ marginLeft: 6, cursor: 'help' }}>ⓘ</span>
+            </h4>
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <Pie data={chartData} innerRadius={isMobile ? 60 : 80} outerRadius={isMobile ? 80 : 100} dataKey="value" stroke="none" paddingAngle={5}>
@@ -232,13 +305,16 @@ const Dashboard = () => {
           </div>
 
           <div style={{ ...card, padding: '24px' }}>
-            <h4 style={cardTitleStyle}>{t.history}</h4>
+            <h4 style={cardTitleStyle}>
+              {t.history}
+              <span title={t.hisML} style={{ marginLeft: 6, cursor: 'help' }}>ⓘ</span>
+            </h4>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={[...data].reverse().slice(-5)}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
                 <XAxis dataKey="createdAt" hide />
                 <YAxis width={30} tick={{ fontSize: 10 }} />
-                <Tooltip cursor={{ fill: '#f1f8e9' }} />
+                <Tooltip cursor={{ fill: '#f1f8e9' }} content={<CustomTooltip isBar={true} lang={lang} />} />
                 <Bar dataKey="monthly_totalemission" fill={THEME.forest} radius={[4, 4, 0, 0]} barSize={30} />
               </BarChart>
             </ResponsiveContainer>
@@ -305,7 +381,7 @@ const chartGrid = (isMobile) => ({ display: 'grid', gridTemplateColumns: isMobil
 const suggestionGrid = (isMobile) => ({ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr', gap: '15px' }); // Stacked for better readability of long tips
 const suggestionCard = { ...card, padding: '20px', display: 'flex', alignItems: 'center', gap: '15px' };
 const commitBtn = { background: THEME.forest, color: 'white', border: 'none', padding: '12px 20px', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', fontSize: '0.85rem', transition: 'transform 0.2s' };
-const loaderStyle = { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: THEME.forest, fontWeight: 800 };
+// const loaderStyle = { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: THEME.forest, fontWeight: 800 };
 const congratsBox = { ...card, padding: '50px 20px', textAlign: 'center', background: 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)', border: `2px dashed ${THEME.leaf}` };
 const achievementBanner = { background: '#fef3c7', border: '1px solid #fbbf24', borderRadius: '20px', padding: '16px', marginBottom: '25px', display: 'flex', alignItems: 'center', gap: '15px' };
 const bannerSub = { margin: 0, color: '#92400e', fontWeight: 900, fontSize: '0.7rem', textTransform: 'uppercase' };

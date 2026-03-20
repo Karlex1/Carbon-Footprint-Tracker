@@ -4,7 +4,7 @@ import { createTheme, ThemeProvider, CssBaseline, Box, CircularProgress } from '
 
 // Components
 import Login from "./components/Login";
-import Questionaire from "./components/Questionaire";
+import Questionnaire from "./components/Questionnaire";
 import Register from "./components/Register";
 import Dashboard from './components/Dashboard';
 import Header from './components/Header';
@@ -89,10 +89,17 @@ const AppContent = () => {
             <Route path='/register' element={<Register />} />
             <Route path='/login' element={<Login />} />
 
-            {/* Protected Routes */}
+            {/* ⭐ Landing Page */}
             <Route path='/' element={
               <ProtectedRouter>
-                <Questionaire />
+                <Dashboard />
+              </ProtectedRouter>
+            } />
+
+            {/* ⭐ Questionnaire moved here */}
+            <Route path='/questionnaire' element={
+              <ProtectedRouter>
+                <Questionnaire />
               </ProtectedRouter>
             } />
 
@@ -102,14 +109,12 @@ const AppContent = () => {
               </ProtectedRouter>
             } />
 
-
             <Route path='/profile' element={
               <ProtectedRouter>
                 <User />
               </ProtectedRouter>
             } />
 
-            {/* Catch-all redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Box>
