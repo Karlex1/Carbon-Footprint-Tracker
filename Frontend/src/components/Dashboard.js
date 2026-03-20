@@ -175,6 +175,10 @@ const Dashboard = () => {
       if (res.ok) alert(lang === 'hi' ? "लक्ष्य निर्धारित!" : "Goal Committed!");
     } catch (e) { console.error(e); }
   };
+  const handleStartSurvey = () => { // ⭐ NEW
+    sessionStorage.setItem('introSeen', 'true');
+    navigate('/questionnaire'); 
+  };
   const CustomTooltip = ({ active, payload, label, isBar, lang }) => {
     if (active && payload && payload.length) {
       return (
@@ -221,7 +225,7 @@ const Dashboard = () => {
 
   return (
     <div style={{ ...pageWrapper, padding: isMobile ? '15px 12px' : '40px 6%' }}>
-      <IntroPopup open={showIntro} onClose={() => { setShowIntro(false); sessionStorage.setItem('introSeen', 'true'); }} />
+      <IntroPopup open={showIntro} onClose={() => { setShowIntro(false); sessionStorage.setItem('introSeen', 'true'); }} onStart = { handleStartSurvey }  />
 
       {/* ACHIEVEMENT BANNER */}
       {achievements && (

@@ -84,7 +84,7 @@ const Header = () => {
                             </Button>
                             <Button
                                 component={Link}
-                                to="/"
+                                to="/questionnaire"
                                 startIcon={<Assignment />}
                                 sx={{
                                     color: 'white',
