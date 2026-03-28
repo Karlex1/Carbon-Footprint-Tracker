@@ -1,0 +1,24 @@
+name: CFT Backend Keep Alive
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # every 30 minutes
+  workflow_dispatch:
+
+jobs:
+  ping_render:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping Backend API
+        run: |
+          echo "Pinging backend..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 ${{ secrets.CFT_B_URL }})
+          echo "Response Code: $STATUS"
+
+          if [ "$STATUS" -ne 200 ]; then
+            echo "⚠️ Backend might be down!"
+            exit 1
+          else
+            echo "✅ Backend is alive!"
+          fi
