@@ -176,7 +176,7 @@ const Header = () => {
                     >
                         <BottomNavigationAction
                             label="Survey"
-                            value="/"
+                            value="/questionnaire"
                             icon={<Assignment />}
                         />
                         <BottomNavigationAction
