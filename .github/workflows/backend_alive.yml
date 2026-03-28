@@ -2,7 +2,7 @@ name: CFT Backend Keep Alive
 
 on:
   schedule:
-    - cron: '*/30 * * * *'   # every 30 minutes
+    - cron: '*/15 * * * *'   # every 30 minutes
   workflow_dispatch:
 
 jobs:
