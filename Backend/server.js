@@ -1,39 +1,43 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-var app = express();
+
 const db_conn = require('./dbconnection.js');
 const Userapis = require('./Components/userapi.js');
 const Emissionapis = require('./Components/emissionapi.js');
-const authmiddleware = require('./Components/authmiddleware.js')
+const authmiddleware = require('./Components/authmiddleware.js');
 const getHistory = require('./Components/getHistory.js');
 const suggestionengine = require('./Components/suggestionapi.js');
 const commit = require('./Components/commitapi.js');
 
-app.use(cors(
-    {
-  // Replace with your actual Vercel URL
-  origin: '*', 
+const app = express();
+
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true // Required if you are using cookies/sessions
-}
-));
+  credentials: true
+}));
+
 app.use(express.json());
+
 db_conn();
-// app.use(express.json())
-app.get(('/'), (req, res) => {
-    res.send("CFT: RAM RAM")
-})
-app.post(('/newuser'), Userapis.adduser)
-app.get(('/profile'),authmiddleware,Userapis.getUserProfile)
-app.post(('/login'), Userapis.login)
-app.post(('/questionaire'), authmiddleware, Emissionapis.questionairecalc)
-app.post(('/gethistory'),authmiddleware,getHistory.gethistory)
-app.post(('/suggestionengine'),authmiddleware,suggestionengine.suggestionengine);
-app.post(('/commitment'), authmiddleware, commit.commitToTip)
-app.post(('/addcommit'), authmiddleware, Emissionapis.addCommit)
 
+app.get('/', (req, res) => {
+  res.send('CFT: RAM RAM');
+});
 
-var port = process.env.PORT;
-app.listen(port, () => { console.log('server started') })
+app.post('/newuser', Userapis.adduser);
+app.post('/login', Userapis.login);
+app.get('/profile', authmiddleware, Userapis.getUserProfile);
+
+app.post('/questionnaire', authmiddleware, Emissionapis.questionairecalc);
+app.post('/gethistory', authmiddleware, getHistory.gethistory);
+app.post('/suggestionengine', authmiddleware, suggestionengine.suggestionengine);
+app.post('/commitment', authmiddleware, commit.commitToTip);
+app.post('/addcommit', authmiddleware, Emissionapis.addCommit);
+
+const port = process.env.PORT || 5000;
+app.listen(port, () => {
+  console.log(`Server started on port ${port}`);
+});

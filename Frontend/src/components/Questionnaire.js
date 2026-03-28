@@ -128,7 +128,7 @@ const Questionnaire = () => {
         delete payload.recycling_items; delete payload.cooking_methods;
 
         try {
-            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/questionaire`, {
+            const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/questionnaire`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
                 body: JSON.stringify(payload)
